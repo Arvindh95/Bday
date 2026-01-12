@@ -272,6 +272,46 @@ Happy Birthday, chellam!
   // Treasure position (in locked room)
   const treasure = { x: 750, y: 620 };
 
+  // NPCs (pets/friends that give hints)
+  const npcs = [
+    {
+      id: 'dog',
+      x: 300,
+      y: 350,
+      w: 20,
+      h: 16,
+      speed: 30,
+      vx: 0,
+      vy: 0,
+      moveTimer: 0,
+      bounds: { minX: 220, maxX: 400, minY: 320, maxY: 390 },
+      name: '🐕 Puppy',
+      dialogue: [
+        "Woof! There are 5 hearts hidden in the rooms!",
+        "Find them all to unlock the treasure! 🔐"
+      ]
+    },
+    {
+      id: 'cat',
+      x: 550,
+      y: 350,
+      w: 18,
+      h: 14,
+      speed: 25,
+      vx: 0,
+      vy: 0,
+      moveTimer: 0,
+      bounds: { minX: 500, maxX: 630, minY: 320, maxY: 390 },
+      name: '🐈 Kitty',
+      dialogue: [
+        "Meow~ The hearts glow pink... look carefully!",
+        "Walk right into them to interact! 💗"
+      ]
+    }
+  ];
+  let currentNpcDialogue = null;
+  let npcCooldown = 0;
+
   // State
   let state = { started: false, collected: {}, finished: false };
   let particles = []; // { x, y, vx, vy, color, life, size }
@@ -481,7 +521,7 @@ Happy Birthday, chellam!
       updateHeartsUI();
       Audio.playCollect(); // Sound
       spawnConfetti(player.x, player.y); // Particles
-      setTimeout(closeOverlay, 1500);
+      // Modal stays open until user clicks close button
     } else {
       feedback.textContent = "Not quite right, try again! 💭";
       feedback.className = "no";
@@ -596,6 +636,74 @@ Happy Birthday, chellam!
     ctx.restore();
   }
 
+  // Draw NPCs
+  function drawNpc(npc) {
+    const bob = Math.sin(now() / 300) * 1;
+    ctx.save();
+    ctx.translate(npc.x, npc.y + bob);
+
+    if (npc.id === 'dog') {
+      // Body
+      ctx.fillStyle = '#d4a373';
+      ctx.fillRect(0, 4, 16, 10);
+      // Head
+      ctx.fillRect(12, 0, 8, 10);
+      // Ears
+      ctx.fillStyle = '#8b5a2b';
+      ctx.fillRect(14, -2, 3, 4);
+      ctx.fillRect(17, -2, 3, 4);
+      // Eyes
+      ctx.fillStyle = '#000';
+      ctx.fillRect(15, 3, 2, 2);
+      ctx.fillRect(18, 3, 2, 2);
+      // Nose
+      ctx.fillStyle = '#333';
+      ctx.fillRect(20, 5, 2, 2);
+      // Tail
+      ctx.fillStyle = '#d4a373';
+      ctx.fillRect(-4, 6, 5, 3);
+      // Legs
+      ctx.fillRect(2, 14, 3, 4);
+      ctx.fillRect(10, 14, 3, 4);
+    } else if (npc.id === 'cat') {
+      // Body
+      ctx.fillStyle = '#888';
+      ctx.fillRect(0, 4, 14, 8);
+      // Head
+      ctx.fillRect(10, 0, 8, 8);
+      // Ears (triangular effect)
+      ctx.fillStyle = '#666';
+      ctx.fillRect(11, -3, 3, 4);
+      ctx.fillRect(15, -3, 3, 4);
+      // Eyes
+      ctx.fillStyle = '#4caf50';
+      ctx.fillRect(12, 2, 2, 2);
+      ctx.fillRect(15, 2, 2, 2);
+      // Whiskers
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(18, 4, 3, 1);
+      ctx.fillRect(18, 6, 3, 1);
+      // Tail
+      ctx.fillStyle = '#888';
+      ctx.fillRect(-5, 2, 6, 2);
+      // Legs
+      ctx.fillRect(2, 12, 2, 3);
+      ctx.fillRect(9, 12, 2, 3);
+    }
+
+    ctx.restore();
+  }
+
+  function showNpcDialogue(npc) {
+    currentNpcDialogue = npc;
+    npcCooldown = now() + 1000;
+    Audio.playClick();
+  }
+
+  function closeNpcDialogue() {
+    currentNpcDialogue = null;
+  }
+
   // Draw
   function draw() {
     const vw = canvas.clientWidth,
@@ -704,6 +812,11 @@ Happy Birthday, chellam!
       ctx.fillText("🎁", treasure.x, treasure.y);
     }
 
+    // NPCs
+    for (const npc of npcs) {
+      drawNpc(npc);
+    }
+
     // Player
     drawPlayer(player.x, player.y);
 
@@ -720,13 +833,52 @@ Happy Birthday, chellam!
     const lx = player.x + player.w/2 - cx;
     const ly = player.y + player.h/2 - cy;
     
-    // Create radial gradient for "lantern" effect
-    const grad = ctx.createRadialGradient(lx, ly, 80, lx, ly, 450);
+    // Create radial gradient for \"lantern\" effect (smaller for mobile)
+    const grad = ctx.createRadialGradient(lx, ly, 50, lx, ly, 250);
     grad.addColorStop(0, "rgba(15, 18, 32, 0)"); // Transparent center
     grad.addColorStop(1, "rgba(15, 18, 32, 0.85)"); // Dark edges
     
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, vw, vh);
+
+    // NPC Dialogue Bubble (in screen space)
+    if (currentNpcDialogue) {
+      const bubbleW = 260;
+      const bubbleH = 80;
+      const bx = (vw - bubbleW) / 2;
+      const by = 50;
+      
+      // Bubble background
+      ctx.fillStyle = 'rgba(30, 35, 56, 0.95)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bubbleW, bubbleH, 12);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 107, 179, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // NPC name
+      ctx.fillStyle = '#ff6bb3';
+      ctx.font = 'bold 13px system-ui';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(currentNpcDialogue.name, bx + 12, by + 10);
+      
+      // Dialogue text
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px system-ui';
+      let textY = by + 30;
+      for (const line of currentNpcDialogue.dialogue) {
+        ctx.fillText(line, bx + 12, textY);
+        textY += 18;
+      }
+      
+      // Close hint
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText('walk away to close', bx + bubbleW - 10, by + bubbleH - 8);
+    }
 
     // No restart needed since we restored earlier
   }
@@ -783,6 +935,36 @@ Happy Birthday, chellam!
         if (p.life <= 0) particles.splice(i, 1);
       }
 
+      // Update NPC movement
+      for (const npc of npcs) {
+        npc.moveTimer -= dt;
+        if (npc.moveTimer <= 0) {
+          // Pick new random direction (or stop)
+          const action = Math.random();
+          if (action < 0.3) {
+            // Stop moving
+            npc.vx = 0;
+            npc.vy = 0;
+          } else {
+            // Move in a random direction
+            const angle = Math.random() * Math.PI * 2;
+            npc.vx = Math.cos(angle) * npc.speed;
+            npc.vy = Math.sin(angle) * npc.speed;
+          }
+          npc.moveTimer = 1 + Math.random() * 2; // 1-3 seconds
+        }
+        
+        // Apply movement
+        npc.x += npc.vx * dt;
+        npc.y += npc.vy * dt;
+        
+        // Keep within bounds
+        if (npc.x < npc.bounds.minX) { npc.x = npc.bounds.minX; npc.vx *= -1; }
+        if (npc.x > npc.bounds.maxX) { npc.x = npc.bounds.maxX; npc.vx *= -1; }
+        if (npc.y < npc.bounds.minY) { npc.y = npc.bounds.minY; npc.vy *= -1; }
+        if (npc.y > npc.bounds.maxY) { npc.y = npc.bounds.maxY; npc.vy *= -1; }
+      }
+
       // Check item
       const near = getNearbyItem();
 
@@ -800,6 +982,25 @@ Happy Birthday, chellam!
       }
 
       checkTreasure();
+
+      // NPC interaction
+      const px = player.x + player.w / 2;
+      const py = player.y + player.h / 2;
+      let nearNpc = null;
+      for (const npc of npcs) {
+        const npcCenterX = npc.x + npc.w / 2;
+        const npcCenterY = npc.y + npc.h / 2;
+        if (Math.hypot(px - npcCenterX, py - npcCenterY) < 35) {
+          nearNpc = npc;
+          break;
+        }
+      }
+      
+      if (nearNpc && now() > npcCooldown && !currentNpcDialogue) {
+        showNpcDialogue(nearNpc);
+      } else if (!nearNpc && currentNpcDialogue) {
+        closeNpcDialogue();
+      }
 
       // Hint
       const gateNear =
