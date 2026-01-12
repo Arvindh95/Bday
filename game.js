@@ -90,12 +90,19 @@ Happy Birthday, chellam!
   const keysEl = document.createElement("div");
   keysEl.id = "keysDisplay";
   keysEl.style.cssText = "display:flex;gap:4px;margin-top:8px;justify-content:flex-end;";
-  // Wrap hearts and keys in a column container
+  
+  // Create flowers display element
+  const flowersEl = document.createElement("div");
+  flowersEl.id = "flowersDisplay";
+  flowersEl.style.cssText = "display:flex;gap:4px;margin-top:8px;justify-content:flex-end;align-items:center;font-size:14px;color:#fff;";
+  
+  // Wrap hearts, keys, and flowers in a column container
   const statsContainer = document.createElement("div");
   statsContainer.style.cssText = "display:flex;flex-direction:column;align-items:flex-end;";
   heartsEl.parentNode.insertBefore(statsContainer, heartsEl);
   statsContainer.appendChild(heartsEl);
   statsContainer.appendChild(keysEl);
+  statsContainer.appendChild(flowersEl);
   const hintBubble = document.getElementById("hintBubble");
   const overlay = document.getElementById("overlay");
   const itemTitle = document.getElementById("itemTitle");
@@ -111,6 +118,61 @@ Happy Birthday, chellam!
   const finalMsg = document.getElementById("finalMsg");
   const replayBtn = document.getElementById("replayBtn");
   const resetBtn = document.getElementById("resetBtn");
+
+  // Create flower completion popup (separate from final modal)
+  const flowerPopup = document.createElement("div");
+  flowerPopup.id = "flowerPopup";
+  flowerPopup.style.cssText = `
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+    text-align: center;
+  `;
+  document.body.appendChild(flowerPopup);
+
+  function showFlowerPopup() {
+    flowerPopup.innerHTML = `
+      <div style="background: linear-gradient(135deg, #1a1e30 0%, #2d3250 100%); padding: 30px; border-radius: 20px; border: 3px solid #ff6bb3; max-width: 350px;">
+        <div style="font-size: 50px; margin-bottom: 15px;">💐</div>
+        <h2 style="color: #ff6bb3; margin: 0 0 15px 0; font-size: 24px;">You found all the flowers!</h2>
+        <p style="color: #fff; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+          Arvindh came to give you a beautiful bouquet! 💕
+        </p>
+        <button id="flowerPopupClose" class="bigBtn pink">Continue 💕</button>
+      </div>
+    `;
+
+    document.getElementById("flowerPopupClose").addEventListener("click", () => {
+      flowerPopup.style.display = "none";
+    });
+
+    flowerPopup.style.display = "flex";
+  }
+
+  // Create "Continue Exploring" button for final modal (to collect flowers after treasure)
+  const continueBtn = document.createElement("button");
+  continueBtn.textContent = "Continue Exploring 🌸";
+  continueBtn.className = "bigBtn pink";
+  replayBtn.parentNode.insertBefore(continueBtn, replayBtn);
+
+  continueBtn.addEventListener("click", () => {
+    final.style.display = "none";
+  });
+
+  // Hide continue button if all flowers already collected (12 total flowers)
+  const finalObserver = new MutationObserver(() => {
+    if (final.style.display === "flex") {
+      const allFlowersCollected = Object.keys(state.flowersCollected).length >= 12;
+      continueBtn.style.display = allFlowersCollected ? "none" : "block";
+    }
+  });
+  finalObserver.observe(final, { attributes: true, attributeFilter: ["style"] });
 
   finalMsg.textContent = FINAL_MESSAGE;
 
@@ -400,8 +462,38 @@ Happy Birthday, chellam!
   ];
   keys.forEach(k => k.r = 15);
 
+  // 💐 Collectible Flowers (13 total) - scattered across the map
+  const flowers = [
+    // Top corridors
+    { id: 'f1', x: 320, y: 240, color: '#ff6b9d', emoji: '🌸', collected: false },   // Corridor near Room 1
+    { id: 'f2', x: 600, y: 250, color: '#ff9800', emoji: '🌻', collected: false },   // Near Room 2 entrance
+    { id: 'f3', x: 800, y: 240, color: '#e91e63', emoji: '🌹', collected: false },   // Winding corridor (moved for access)
+    
+    // Maze area
+    { id: 'f4', x: 300, y: 420, color: '#9c27b0', emoji: '💜', collected: false },   // Near maze pillar
+    { id: 'f5', x: 550, y: 480, color: '#ff5722', emoji: '🌺', collected: false },   // Center maze
+    { id: 'f6', x: 720, y: 580, color: '#e91e63', emoji: '🌹', collected: false },   // Secret passage area
+    { id: 'f7', x: 920, y: 480, color: '#ffeb3b', emoji: '🌼', collected: false },   // Right maze
+    { id: 'f8', x: 1100, y: 450, color: '#ff6b9d', emoji: '🌸', collected: false },  // Hidden corner area
+    
+    // Bottom section
+    { id: 'f9', x: 180, y: 800, color: '#ff9800', emoji: '🌻', collected: false },   // Left corridor
+    { id: 'f10', x: 420, y: 780, color: '#e91e63', emoji: '🌹', collected: false },  // Between Room 4&5
+    { id: 'f11', x: 650, y: 820, color: '#9c27b0', emoji: '💜', collected: false },  // Near Room 5
+    { id: 'f12', x: 950, y: 780, color: '#ff5722', emoji: '🌺', collected: false },  // Corridor to treasure
+  ];
+  flowers.forEach(f => f.r = 12);
+
   // State
-  let state = { started: false, collected: {}, finished: false, keysCollected: {}, doorsUnlocked: {} };
+  let state = { 
+    started: false, 
+    collected: {}, 
+    finished: false, 
+    keysCollected: {}, 
+    doorsUnlocked: {},
+    flowersCollected: {},
+    bouquetEnding: false  // True if player got the special bouquet ending
+  };
   let particles = []; // { x, y, vx, vy, color, life, size }
   let footsteps = []; // { x, y, life, size } - fading footprints
   let sparkles = [];  // { x, y, vx, vy, color, life, size } - floating sparkles around items
@@ -467,13 +559,15 @@ Happy Birthday, chellam!
     girlX: 0,
     girlY: 0,
     heartY: 0,
-    heartAlpha: 0
+    heartAlpha: 0,
+    isBouquet: false  // True if this is the bouquet ending cutscene
   };
 
   function startCutscene() {
     cutscene.active = true;
     cutscene.phase = 0;
     cutscene.timer = 0;
+    cutscene.isBouquet = false;
     // Position girl at treasure, guy starts from left
     cutscene.girlX = treasure.x;
     cutscene.girlY = treasure.y - 20;
@@ -481,6 +575,22 @@ Happy Birthday, chellam!
     cutscene.guyY = treasure.y - 20;
     cutscene.heartY = 0;
     cutscene.heartAlpha = 0;
+  }
+
+  function startBouquetCutscene() {
+    cutscene.active = true;
+    cutscene.phase = 0;
+    cutscene.timer = 0;
+    cutscene.isBouquet = true;  // This is the special bouquet ending!
+    // Position at player's current location
+    cutscene.girlX = player.x;
+    cutscene.girlY = player.y;
+    cutscene.guyX = player.x - 120;
+    cutscene.guyY = player.y;
+    cutscene.heartY = 0;
+    cutscene.heartAlpha = 0;
+    // Play special sound
+    Audio.playWin();
   }
 
   function updateCutscene(dt) {
@@ -525,9 +635,17 @@ Happy Birthday, chellam!
       case 3: // Fade out and show modal
         if (cutscene.timer > 0.5) {
           cutscene.active = false;
-          state.finished = true;
-          save();
-          final.style.display = "flex";
+          if (cutscene.isBouquet) {
+            // Bouquet ending - show flower popup (not final modal)
+            state.bouquetEnding = true;
+            save();
+            showFlowerPopup();
+          } else {
+            // Normal treasure ending - show final modal
+            state.finished = true;
+            save();
+            final.style.display = "flex";
+          }
         }
         break;
     }
@@ -671,10 +789,33 @@ Happy Birthday, chellam!
     if (cutscene.phase === 0) {
       // Walking phase - draw both separately
       drawBoy(cutscene.guyX, cutscene.guyY, true);
+      // Draw bouquet in boy's hand if special ending
+      if (cutscene.isBouquet) {
+        ctx.save();
+        ctx.translate(cutscene.guyX + 20, cutscene.guyY + 20); // Right hand position
+        const bob = Math.sin(now() / 80) * 2;
+        ctx.translate(0, bob);
+        // Draw bouquet
+        ctx.font = "20px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("💐", 0, 0);
+        ctx.restore();
+      }
       drawPlayer(cutscene.girlX, cutscene.girlY);
     } else if (cutscene.phase >= 1) {
       // Hugging phase
       drawHuggingCouple(cutscene.guyX, cutscene.guyY);
+      // Draw bouquet held behind/side
+      if (cutscene.isBouquet) {
+        ctx.save();
+        ctx.translate(cutscene.guyX + 24, cutscene.guyY + 20);
+        ctx.font = "20px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("💐", 0, 0);
+        ctx.restore();
+      }
     }
     
     // Draw floating heart
@@ -707,9 +848,12 @@ Happy Birthday, chellam!
         state.finished = !!obj.finished;
         state.keysCollected = obj.keysCollected || {};
         state.doorsUnlocked = obj.doorsUnlocked || {};
+        state.flowersCollected = obj.flowersCollected || {};
+        state.bouquetEnding = !!obj.bouquetEnding;
         // Sync keys and doors arrays with state
         keys.forEach(k => k.collected = !!state.keysCollected[k.id]);
         doors.forEach(d => d.unlocked = !!state.doorsUnlocked[d.id]);
+        flowers.forEach(f => f.collected = !!state.flowersCollected[f.id]);
       }
     } catch (e) {}
   }
@@ -721,15 +865,25 @@ Happy Birthday, chellam!
   }
 
   function resetAll() {
-    state = { started: false, collected: {}, finished: false, keysCollected: {}, doorsUnlocked: {} };
-    // Reset doors and keys in the arrays as well
+    state = { 
+      started: false, 
+      collected: {}, 
+      finished: false, 
+      keysCollected: {}, 
+      doorsUnlocked: {},
+      flowersCollected: {},
+      bouquetEnding: false
+    };
+    // Reset doors, keys, and flowers in the arrays
     doors.forEach(d => d.unlocked = false);
     keys.forEach(k => k.collected = false);
-    player.x = 400;
-    player.y = 340;
+    flowers.forEach(f => f.collected = false);
+    player.x = 600;
+    player.y = 450;
     save();
     updateHeartsUI();
     updateKeysUI();
+    updateFlowersUI();
     final.style.display = "none";
     splash.style.display = "flex";
   }
@@ -768,6 +922,54 @@ Happy Birthday, chellam!
       `;
       d.textContent = state.keysCollected[key.id] ? "🔑" : "";
       keysEl.appendChild(d);
+    }
+  }
+
+  // Flowers UI - show bouquet progress
+  function updateFlowersUI() {
+    const collected = flowersCollectedCount();
+    const total = flowers.length;
+    if (collected === total) {
+      flowersEl.innerHTML = `<span style="color:#ffeb3b;">💐 ${collected}/${total} Complete!</span>`;
+    } else {
+      flowersEl.innerHTML = `<span>💐 ${collected}/${total}</span>`;
+    }
+  }
+
+  function flowersCollectedCount() {
+    return Object.keys(state.flowersCollected).length;
+  }
+
+  // Get nearby flower
+  function getNearbyFlower() {
+    const px = player.x + player.w / 2,
+      py = player.y + player.h / 2;
+    for (const flower of flowers) {
+      if (state.flowersCollected[flower.id]) continue;
+      const d = Math.hypot(px - flower.x, py - flower.y);
+      if (d < 25) return flower;
+    }
+    return null;
+  }
+
+  // Collect a flower
+  function collectFlower(flower) {
+    state.flowersCollected[flower.id] = true;
+    flower.collected = true;
+    save();
+    updateFlowersUI();
+    // Play a gentle collect sound
+    Audio.playTone(800, 'sine', 0.15, 0.1);
+    setTimeout(() => Audio.playTone(1000, 'sine', 0.1, 0.1), 80);
+    spawnConfetti(flower.x, flower.y);
+    triggerScreenShake(2, 0.1);
+    
+    // Check if all flowers collected - trigger bouquet cutscene!
+    if (flowersCollectedCount() === flowers.length && !state.bouquetEnding) {
+      // Small delay before starting bouquet cutscene
+      setTimeout(() => {
+        startBouquetCutscene();
+      }, 500);
     }
   }
 
@@ -1343,6 +1545,32 @@ Happy Birthday, chellam!
       ctx.fillText(key.icon, key.x, key.y);
     }
 
+    // Draw Flowers
+    for (const flower of flowers) {
+      if (state.flowersCollected[flower.id]) continue;
+      const pulse = Math.sin(now() / 400 + flowers.indexOf(flower) * 0.5) * 0.3 + 0.7;
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(flower.x, flower.y, 18 + pulse * 5, 0, Math.PI * 2);
+      ctx.fillStyle = `${flower.color}44`;
+      ctx.fill();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(flower.x, flower.y, flower.r, 0, Math.PI * 2);
+      ctx.fillStyle = flower.color;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.4)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Flower emoji
+      ctx.font = "14px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(flower.emoji, flower.x, flower.y);
+    }
     // Draw Room Doors
     for (const door of doors) {
       const isUnlocked = state.doorsUnlocked[door.id];
@@ -1491,7 +1719,9 @@ Happy Birthday, chellam!
     const dt = Math.min((t - lastTime) / 1000, 0.1);
     lastTime = t;
 
-    if (state.started && !state.finished && overlay.style.display !== "flex") {
+    // Game logic only runs if not paused
+    const isPaused = overlay.style.display === "flex" || final.style.display === "flex" || flowerPopup.style.display === "flex";
+    if (state.started && !isPaused) {
       let dx = 0,
         dy = 0;
       if (input.up) dy = -1;
@@ -1655,6 +1885,16 @@ Happy Birthday, chellam!
         }
       }
 
+      // Check for flower collection
+      const nearFlower = getNearbyFlower();
+      if (nearFlower) {
+        const px = player.x + player.w / 2,
+          py = player.y + player.h / 2;
+        if (Math.hypot(px - nearFlower.x, py - nearFlower.y) < 18) {
+          collectFlower(nearFlower);
+        }
+      }
+
       // Check for door unlocking (walk into door with key)
       const nearDoor = getNearbyLockedDoor();
       if (nearDoor && state.keysCollected[nearDoor.keyId]) {
@@ -1698,6 +1938,29 @@ Happy Birthday, chellam!
       } else if (collectedCount() >= 5 && !state.finished) {
         hintBubble.textContent = "✨ Go to the treasure room! ✨";
         hintBubble.style.display = "block";
+      } else if (state.finished && !state.bouquetEnding) {
+        // Hint for flowers in post-game
+        let nearestF = null;
+        let minDist = Infinity;
+        const px = player.x + player.w/2;
+        const py = player.y + player.h/2;
+        for(const f of flowers) {
+          if(!state.flowersCollected[f.id]) {
+              const d = Math.hypot(px - f.x, py - f.y);
+              if(d < minDist) { minDist = d; nearestF = f; }
+          }
+        }
+        
+        if (nearestF) {
+           if (minDist < 200) {
+               hintBubble.textContent = "🌸 Flower nearby! Look closely!";
+           } else {
+               hintBubble.textContent = `🌸 ${flowersCollectedCount()}/${flowers.length} found! Keep exploring!`;
+           }
+           hintBubble.style.display = "block";
+        } else {
+           hintBubble.style.display = "none";
+        }
       } else {
         hintBubble.style.display = "none";
       }
@@ -1746,6 +2009,7 @@ Happy Birthday, chellam!
   load();
   updateHeartsUI();
   updateKeysUI();
+  updateFlowersUI();
   if (state.finished) {
     splash.style.display = "none";
     final.style.display = "flex";
