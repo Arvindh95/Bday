@@ -237,6 +237,38 @@ canvas {
 #question {
   font-size: 15px;
   font-weight: 700;
+  margin-bottom: 4px;
+}
+
+#mcqOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mcq-option {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.mcq-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 107, 179, 0.4);
+}
+
+.mcq-option.selected {
+  background: rgba(255, 107, 179, 0.2);
+  border-color: var(--accent);
+  font-weight: 700;
 }
 
 input[type="text"] {
@@ -296,12 +328,14 @@ input[type="text"] {
 
 .modalCard {
   width: min(500px, 100%);
+  max-height: 90vh;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: linear-gradient(180deg, #1a1f35, #0d1020);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
   padding: 20px;
   text-align: center;
+  overflow-y: auto;
 }
 
 .modalCard h1 {
@@ -325,6 +359,15 @@ input[type="text"] {
   white-space: pre-wrap;
   font-size: 15px;
   line-height: 1.5;
+}
+
+#birthdayImg {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  margin: 16px 0;
+  border: 2px solid rgba(255, 107, 179, 0.3);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .bigBtn {

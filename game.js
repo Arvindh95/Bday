@@ -1,13 +1,14 @@
 (() => {
   const FINAL_MESSAGE = `You found the treasure! 💖
 
+You deserve all the happiness in this world, chellam. 
 Thank you for being my favorite person in the whole world.
 Every memory with you is precious to me.
 
 I love you more than words can say.
-Here's to another year of adventures together!
+Happy Birthday, chellam!
 
-— Your baby 🥹💞`;
+— Your kanna 💞`;
 
   const STORAGE_KEY = "girrja_bday_v3";
 
@@ -41,7 +42,7 @@ Here's to another year of adventures together!
   const itemTitle = document.getElementById("itemTitle");
   const cardSub = document.getElementById("cardSub");
   const questionEl = document.getElementById("question");
-  const answerInput = document.getElementById("answerInput");
+  const mcqOptions = document.getElementById("mcqOptions");
   const submitBtn = document.getElementById("submitBtn");
   const feedback = document.getElementById("feedback");
   const closeX = document.getElementById("closeX");
@@ -72,15 +73,23 @@ Here's to another year of adventures together!
   addWall(650, 300, 234, W);
   addWall(650, 400, 234, W);
 
+  // Hallway bottom walls connecting to rooms below
+  // Leave gaps for Room 4 entrance (around x: 100-150) and Room 5 entrance (around x: 350-450)
+  addWall(W, 400, 80, W);     // Left side before Room 4 entrance
+  addWall(160, 400, 140, W);  // Wall between Room 4 and Room 5 entrance
+  addWall(450, 400, 150, W);  // Wall between Room 5 entrance and Treasure room
+
   // Room 1 (top-left)
   addWall(W, W, 200, W);
   addWall(200, W, W, 200);
   addWall(W, 200, 120, W);
 
   // Room 2 (top-right)
-  addWall(350, W, 200, W);
-  addWall(350, W, W, 200);
-  addWall(430, 200, 120, W);
+  addWall(350, W, 200, W); // Top wall
+  addWall(350, W, W, 200); // Left wall
+  addWall(550, W, W, 200); // Right wall
+  addWall(350, 200, 80, W); // Left side of bottom wall (entrance gap)
+  addWall(480, 200, 70, W); // Right side of bottom wall (leaving gap from 430 to 480)
 
   // Room 3 (right side)
   addWall(650, W, 234, W);
@@ -88,22 +97,25 @@ Here's to another year of adventures together!
   addWall(650, 280, W, 20);
 
   // Room 4 (bottom-left)
-  addWall(W, 500, 200, W);
-  addWall(200, 500, W, 234);
-  addWall(W, 500, W, 234);
-  addWall(120, 400, 80, W);
+  addWall(W, 500, 70, W);     // Top-left part of top wall
+  addWall(150, 500, 50, W);   // Top-right part of top wall (gap from x:86 to x:150)
+  addWall(200, 500, W, 234);  // Right wall
+  addWall(W, 500, W, 234);    // Left wall
 
   // Room 5 (bottom-center)
-  addWall(300, 500, W, 234);
-  addWall(300, 500, 150, W);
-  addWall(500, 500, W, 234);
-  addWall(450, 500, 50, W);
-  addWall(350, 400, 50, W);
-  addWall(450, 400, 50, W);
+  addWall(300, 500, W, 234);  // Left wall
+  addWall(300, 500, 50, W);   // Top-left part of top wall
+  addWall(500, 500, W, 234);  // Right wall
+  addWall(450, 500, 50, W);   // Top-right part of top wall (gap from x:366 to x:450)
 
   // Treasure Room (bottom-right)
-  addWall(600, 500, W, 234);
-  addWall(600, 500, 284, W);
+  addWall(600, 500, W, 234);  // Left wall
+  addWall(600, 500, 80, W);   // Top-left part of top wall
+  addWall(730, 500, 154, W);  // Top-right part of top wall (gap from x:680 to x:730)
+  addWall(884, 500, W, 234);  // Right wall
+  addWall(600, 734, 284, W);  // Bottom wall
+  addWall(600, 400, 80, W);   // Left side of entrance wall
+  addWall(730, 400, 154, W);  // Right side of entrance wall (leaving gap from 680 to 730)
 
   // Player
   const player = {
@@ -130,7 +142,8 @@ Here's to another year of adventures together!
       subtitle: "Our first movie together...",
       question: "What was the first movie we watched together?",
       answer: "Thiruchitrambalam",
-      onWin: "Aww 🥹💗 That memory is safe with you!",
+      options: ["Thiruchitrambalam", "Vikram", "KGF", "Ponniyin Selvan"],
+      onWin: "You kissed me first during the movie! 😝",
     },
     {
       id: "food",
@@ -139,8 +152,9 @@ Here's to another year of adventures together!
       name: "Food Receipt 🍗",
       subtitle: "A delicious memory...",
       question: "What's our favourite food shop?",
-      answer: "Southern park chicken rice",
-      onWin: "Yum 😋💖 Now I'm craving it!",
+      answer: "Southern Park Chicken Rice",
+      options: ["Southern Park Chicken Rice", "KFC", "McDonald's", "Texas Chicken"],
+      onWin: "I know, it surperceeds MCD 🥹",
     },
     {
       id: "clone",
@@ -148,9 +162,10 @@ Here's to another year of adventures together!
       y: 150,
       name: "Clone Detector 🧪",
       subtitle: "Only the real Girrja knows...",
-      question: "If you were a clone, what phrase would I use to find out?",
+      question: "If you were a clone, what phrase would I use to find out? (Only one part of the phrase)",
       answer: "So clever my baby.",
-      onWin: "Correct 😌💞 You're the real one!",
+      options: ["So clever my baby.", "You're so smart!", "That's amazing!", "Good job!"],
+      onWin: "Correct 😌💞 You know what I am gonna show next 😉",
     },
     {
       id: "song",
@@ -160,7 +175,8 @@ Here's to another year of adventures together!
       subtitle: "A melody with our inside joke...",
       question: "Which song has our inside joke?",
       answer: "Un Vizhigal",
-      onWin: "Eee 🥰💗 Our song!",
+      options: ["Un Vizhigal", "Vaa Vaathi", "Katchi Sera", "Arabic Kuthu"],
+      onWin: "If you know, you know 😂😂",
     },
     {
       id: "story",
@@ -170,6 +186,7 @@ Here's to another year of adventures together!
       subtitle: "A story that makes us smile...",
       question: "What's the best story you have heard?",
       answer: "Cool story",
+      options: ["Cool story", "Amazing tale", "Great adventure", "Wonderful journey"],
       onWin: "Hehe 😄💘 That's the one!",
     },
   ];
@@ -294,6 +311,8 @@ Here's to another year of adventures together!
   // Item interaction
   let currentItem = null;
   let overlayCooldown = 0;
+  let closedItemId = null; // Track which item was manually closed
+  let selectedAnswer = null; // Track the selected MCQ answer
 
   function getNearbyItem() {
     const px = player.x + player.w / 2,
@@ -306,27 +325,59 @@ Here's to another year of adventures together!
     return null;
   }
 
+  function isPlayerNearItem(itemId) {
+    const px = player.x + player.w / 2,
+      py = player.y + player.h / 2;
+    const it = items.find(i => i.id === itemId);
+    if (!it) return false;
+    return Math.hypot(px - it.x, py - it.y) < 40;
+  }
+
   function openOverlay(item) {
     currentItem = item;
+    selectedAnswer = null;
     itemTitle.textContent = item.name;
     cardSub.textContent = item.subtitle;
     questionEl.textContent = item.question;
-    answerInput.value = "";
     feedback.textContent = "";
     feedback.className = "";
+
+    // Create MCQ options
+    mcqOptions.innerHTML = "";
+    if (item.options && item.options.length > 0) {
+      item.options.forEach((option) => {
+        const btn = document.createElement("button");
+        btn.className = "mcq-option";
+        btn.textContent = option;
+        btn.addEventListener("click", () => {
+          // Deselect all options
+          mcqOptions.querySelectorAll(".mcq-option").forEach(b => b.classList.remove("selected"));
+          // Select this option
+          btn.classList.add("selected");
+          selectedAnswer = option;
+        });
+        mcqOptions.appendChild(btn);
+      });
+    }
+
     overlay.style.display = "flex";
-    setTimeout(() => answerInput.focus(), 50);
   }
 
   function closeOverlay() {
     overlay.style.display = "none";
+    closedItemId = currentItem ? currentItem.id : null; // Remember which item was closed
     currentItem = null;
     overlayCooldown = now() + 500; // 500ms cooldown before reopening
   }
 
   function checkAnswer() {
     if (!currentItem) return;
-    if (normalize(answerInput.value) === normalize(currentItem.answer)) {
+    if (!selectedAnswer) {
+      feedback.textContent = "Please select an answer! 💭";
+      feedback.className = "no";
+      return;
+    }
+    if (normalize(selectedAnswer) === normalize(currentItem.answer)) {
       feedback.textContent = currentItem.onWin;
       feedback.className = "ok";
       state.collected[currentItem.id] = true;
@@ -581,7 +632,13 @@ Here's to another year of adventures together!
 
       // Check item
       const near = getNearbyItem();
-      if (near && now() > overlayCooldown) {
+
+      // Reset closedItemId if player moved away from that item
+      if (closedItemId && !isPlayerNearItem(closedItemId)) {
+        closedItemId = null;
+      }
+
+      if (near && now() > overlayCooldown && near.id !== closedItemId) {
         const px = player.x + player.w / 2,
           py = player.y + player.h / 2;
         if (Math.hypot(px - near.x, py - near.y) < 25) {
@@ -642,9 +699,6 @@ Here's to another year of adventures together!
   replayBtn.addEventListener("click", resetAll);
   closeX.addEventListener("click", closeOverlay);
   submitBtn.addEventListener("click", checkAnswer);
-  answerInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") checkAnswer();
-  });
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeOverlay();
   });
