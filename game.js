@@ -457,6 +457,246 @@ Happy Birthday, chellam!
     screenShake.duration = duration;
   }
 
+  // ===== CUTSCENE SYSTEM =====
+  let cutscene = {
+    active: false,
+    phase: 0,        // 0=guy walking, 1=hug, 2=heart rising, 3=done
+    timer: 0,
+    guyX: 0,
+    guyY: 0,
+    girlX: 0,
+    girlY: 0,
+    heartY: 0,
+    heartAlpha: 0
+  };
+
+  function startCutscene() {
+    cutscene.active = true;
+    cutscene.phase = 0;
+    cutscene.timer = 0;
+    // Position girl at treasure, guy starts from left
+    cutscene.girlX = treasure.x;
+    cutscene.girlY = treasure.y - 20;
+    cutscene.guyX = treasure.x - 120; // Start 120px to the left
+    cutscene.guyY = treasure.y - 20;
+    cutscene.heartY = 0;
+    cutscene.heartAlpha = 0;
+  }
+
+  function updateCutscene(dt) {
+    if (!cutscene.active) return;
+    
+    cutscene.timer += dt;
+    
+    switch (cutscene.phase) {
+      case 0: // Guy walking towards girl
+        const targetX = cutscene.girlX - 30; // Stop 30px away for hug
+        if (cutscene.guyX < targetX) {
+          cutscene.guyX += 80 * dt; // Walking speed
+          if (cutscene.guyX >= targetX) {
+            cutscene.guyX = targetX;
+            cutscene.phase = 1;
+            cutscene.timer = 0;
+          }
+        }
+        break;
+        
+      case 1: // Hug (guy moves closer)
+        if (cutscene.timer < 0.5) {
+          // Move closer together
+          cutscene.guyX = lerp(cutscene.guyX, cutscene.girlX - 15, 0.1);
+        } else if (cutscene.timer > 1.0) {
+          cutscene.phase = 2;
+          cutscene.timer = 0;
+          cutscene.heartY = cutscene.girlY - 20;
+          cutscene.heartAlpha = 0;
+        }
+        break;
+        
+      case 2: // Heart rising
+        cutscene.heartY -= 40 * dt; // Float up
+        cutscene.heartAlpha = Math.min(1, cutscene.heartAlpha + dt * 2);
+        if (cutscene.timer > 2.0) {
+          cutscene.phase = 3;
+          cutscene.timer = 0;
+        }
+        break;
+        
+      case 3: // Fade out and show modal
+        if (cutscene.timer > 0.5) {
+          cutscene.active = false;
+          state.finished = true;
+          save();
+          final.style.display = "flex";
+        }
+        break;
+    }
+  }
+
+  // Draw pixel boy (similar style to girl but masculine)
+  function drawBoy(x, y, walking) {
+    ctx.save();
+    const px = Math.floor(x);
+    const py = Math.floor(y);
+    const bob = walking ? Math.sin(now() / 80) * 2 : 0;
+
+    ctx.translate(px, py);
+
+    // Hair back (short, dark)
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(2, 2 + bob, 20, 10);
+
+    // Face
+    ctx.fillStyle = "#ffe4d4";
+    ctx.fillRect(5, 6 + bob, 14, 12);
+
+    // Hair (short, spiky)
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(3, 2 + bob, 18, 6);
+    ctx.fillRect(5, 0 + bob, 4, 3); // Spike
+    ctx.fillRect(12, 0 + bob, 4, 3); // Spike
+
+    // Eyes
+    ctx.fillStyle = "#4a3728";
+    ctx.fillRect(7, 10 + bob, 3, 3);
+    ctx.fillRect(14, 10 + bob, 3, 3);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(7, 10 + bob, 1, 1);
+    ctx.fillRect(14, 10 + bob, 1, 1);
+
+    // Smile
+    ctx.fillStyle = "#d4847c";
+    ctx.fillRect(10, 15 + bob, 4, 1);
+
+    // Body/shirt (blue)
+    ctx.fillStyle = "#5c6bc0";
+    ctx.fillRect(5, 18 + bob, 14, 10);
+    ctx.fillStyle = "#3f51b5";
+    ctx.fillRect(5, 18 + bob, 14, 2);
+
+    // Arms
+    ctx.fillStyle = "#ffe4d4";
+    ctx.fillRect(2, 20 + bob, 3, 5);
+    ctx.fillRect(19, 20 + bob, 3, 5);
+
+    // Legs
+    ctx.fillRect(7, 28 + bob, 3, 3);
+    ctx.fillRect(14, 28 + bob, 3, 3);
+
+    // Shoes
+    ctx.fillStyle = "#2d2d3a";
+    ctx.fillRect(6, 30 + bob, 5, 2);
+    ctx.fillRect(13, 30 + bob, 5, 2);
+
+    ctx.restore();
+  }
+
+  // Draw hugging couple
+  function drawHuggingCouple(x, y) {
+    ctx.save();
+    const px = Math.floor(x);
+    const py = Math.floor(y);
+    const breathe = Math.sin(now() / 500) * 1;
+
+    ctx.translate(px, py + breathe);
+
+    // Combined body (overlapping)
+    // Boy on left
+    ctx.fillStyle = "#5c6bc0"; // Boy shirt
+    ctx.fillRect(0, 18, 12, 12);
+    ctx.fillStyle = "#1a1a2e"; // Boy hair
+    ctx.fillRect(2, 2, 14, 8);
+    ctx.fillStyle = "#ffe4d4"; // Boy face
+    ctx.fillRect(4, 6, 10, 10);
+    
+    // Girl on right
+    ctx.fillStyle = "#b8f0d8"; // Girl dress
+    ctx.fillRect(12, 18, 12, 12);
+    ctx.fillStyle = "#2d2d3a"; // Girl hair
+    ctx.fillRect(10, 2, 14, 8);
+    ctx.fillRect(8, 6, 4, 12);
+    ctx.fillRect(20, 6, 4, 12);
+    ctx.fillStyle = "#ffe4d4"; // Girl face
+    ctx.fillRect(12, 6, 10, 10);
+
+    // Hair clip (green)
+    ctx.fillStyle = "#5cb85c";
+    ctx.fillRect(18, 3, 4, 3);
+
+    // Boy's arm around girl
+    ctx.fillStyle = "#ffe4d4";
+    ctx.fillRect(20, 18, 4, 6);
+    
+    // Girl's arm around boy
+    ctx.fillRect(0, 18, 4, 6);
+
+    // Eyes closed (happy)
+    ctx.fillStyle = "#4a3728";
+    ctx.fillRect(6, 10, 4, 1);  // Boy eyes
+    ctx.fillRect(14, 10, 4, 1); // Girl eyes
+
+    // Smiles
+    ctx.fillStyle = "#e08080";
+    ctx.fillRect(7, 13, 3, 1);  // Boy smile
+    ctx.fillRect(15, 13, 3, 1); // Girl smile
+
+    // Blush
+    ctx.fillStyle = "#ffb0b0";
+    ctx.fillRect(4, 11, 2, 2);
+    ctx.fillRect(10, 11, 2, 2);
+    ctx.fillRect(12, 11, 2, 2);
+    ctx.fillRect(18, 11, 2, 2);
+
+    // Legs
+    ctx.fillStyle = "#ffe4d4";
+    ctx.fillRect(2, 30, 3, 3);
+    ctx.fillRect(8, 30, 3, 3);
+    ctx.fillRect(13, 30, 3, 3);
+    ctx.fillRect(19, 30, 3, 3);
+
+    // Shoes
+    ctx.fillStyle = "#2d2d3a";
+    ctx.fillRect(1, 32, 5, 2);
+    ctx.fillRect(7, 32, 5, 2);
+    ctx.fillRect(12, 32, 5, 2);
+    ctx.fillRect(18, 32, 5, 2);
+
+    ctx.restore();
+  }
+
+  function drawCutscene() {
+    if (!cutscene.active) return;
+    
+    // Draw based on phase
+    if (cutscene.phase === 0) {
+      // Walking phase - draw both separately
+      drawBoy(cutscene.guyX, cutscene.guyY, true);
+      drawPlayer(cutscene.girlX, cutscene.girlY);
+    } else if (cutscene.phase >= 1) {
+      // Hugging phase
+      drawHuggingCouple(cutscene.guyX, cutscene.guyY);
+    }
+    
+    // Draw floating heart
+    if (cutscene.phase >= 2 && cutscene.heartAlpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = cutscene.heartAlpha;
+      ctx.font = "40px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const heartX = (cutscene.guyX + cutscene.girlX) / 2 + 12;
+      ctx.fillText("💕", heartX, cutscene.heartY);
+      ctx.restore();
+    }
+    
+    // Fade to white in phase 3
+    if (cutscene.phase === 3) {
+      const alpha = Math.min(1, cutscene.timer * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fillRect(0, 0, world.w, world.h);
+    }
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -746,28 +986,39 @@ Happy Birthday, chellam!
   // Check if near treasure
   function checkTreasure() {
     if (state.finished) return;
+    if (cutscene.active) return; // Don't check during cutscene
     if (collectedCount() < 5) return;
     const px = player.x + player.w / 2,
       py = player.y + player.h / 2;
     if (Math.hypot(px - treasure.x, py - treasure.y) < 50) {
-      state.finished = true;
-      save();
-      final.style.display = "flex";
+      // Start the romantic cutscene instead of showing modal immediately
       Audio.playWin(); // Sound
       spawnConfetti(treasure.x, treasure.y);
+      startCutscene();
     }
   }
 
   function updateCamera() {
     const vw = canvas.clientWidth,
       vh = canvas.clientHeight;
+    
+    // During cutscene, focus on the cutscene characters
+    let focusX, focusY;
+    if (cutscene.active) {
+      focusX = (cutscene.guyX + cutscene.girlX) / 2;
+      focusY = cutscene.girlY;
+    } else {
+      focusX = player.x + player.w / 2;
+      focusY = player.y + player.h / 2;
+    }
+    
     cam.x = clamp(
-      player.x + player.w / 2 - vw / 2,
+      focusX - vw / 2,
       0,
       Math.max(0, world.w - vw)
     );
     cam.y = clamp(
-      player.y + player.h / 2 - vh / 2,
+      focusY - vh / 2,
       0,
       Math.max(0, world.h - vh)
     );
@@ -1124,8 +1375,8 @@ Happy Birthday, chellam!
       }
     }
 
-    // Treasure (if door is open)
-    if (got >= gate.need && !state.finished) {
+    // Treasure (if door is open and not in cutscene)
+    if (got >= gate.need && !state.finished && !cutscene.active) {
       const pulse = Math.sin(now() / 200) * 0.3 + 0.7;
       ctx.beginPath();
       ctx.arc(treasure.x, treasure.y, 35 + pulse * 10, 0, Math.PI * 2);
@@ -1138,13 +1389,20 @@ Happy Birthday, chellam!
       ctx.fillText("🎁", treasure.x, treasure.y);
     }
 
-    // NPCs
-    for (const npc of npcs) {
-      drawNpc(npc);
+    // NPCs (hide during cutscene)
+    if (!cutscene.active) {
+      for (const npc of npcs) {
+        drawNpc(npc);
+      }
     }
 
-    // Player
-    drawPlayer(player.x, player.y);
+    // Player (hide during cutscene - cutscene draws its own characters)
+    if (!cutscene.active) {
+      drawPlayer(player.x, player.y);
+    }
+
+    // Draw cutscene if active
+    drawCutscene();
 
     // Particles (confetti)
     for (const p of particles) {
@@ -1443,6 +1701,12 @@ Happy Birthday, chellam!
       } else {
         hintBubble.style.display = "none";
       }
+    }
+
+    // Update cutscene (runs even when gameplay is paused)
+    if (cutscene.active) {
+      updateCutscene(dt);
+      hintBubble.style.display = "none"; // Hide hints during cutscene
     }
 
     resize();
