@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Girrja's Birthday Adventure</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <div id="title">
+      <div class="big">Girrja's Birthday Adventure 💖</div>
+      <div class="small">Collect 5 hearts → Open the treasure room</div>
+    </div>
+    <div id="btnRow">
+      <button class="smallBtn" id="resetBtn">Reset</button>
+      <div id="hearts"></div>
+    </div>
+  </div>
+
+  <div id="gameArea">
+    <canvas id="c"></canvas>
+    <div id="hintBubble"></div>
+
+    <div id="controls">
+      <div class="dpad">
+        <div class="padBlank"></div>
+        <div class="padBtn" data-dir="up">▲</div>
+        <div class="padBlank"></div>
+        <div class="padBtn" data-dir="left">◀</div>
+        <div class="padBtn" data-dir="down">▼</div>
+        <div class="padBtn" data-dir="right">▶</div>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div id="card">
+        <div id="cardHeader">
+          <div class="hTitle" id="itemTitle">Memory</div>
+          <button id="closeX">×</button>
+        </div>
+        <div id="cardBody">
+          <div id="cardSub"></div>
+          <div id="question"></div>
+          <input id="answerInput" type="text" placeholder="Type your answer..." autocomplete="off" />
+          <button id="submitBtn">Unlock Heart 💗</button>
+          <div id="feedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="splash">
+      <div class="modalCard">
+        <h1>Hi Girrja 💕</h1>
+        <p>This is a tiny adventure made just for you!</p>
+        <p>🗺️ Explore the rooms and find <b>5 glowing hearts</b><br>
+        💬 Answer the memory question to collect each heart<br>
+        🔐 Collect all 5 to unlock the <b>treasure room</b><br>
+        🎁 A special surprise waits inside!</p>
+        <p style="margin-top:12px; font-size:12px; color:rgba(255,255,255,0.6);">
+          Use arrow buttons to move. Walk into hearts to interact.
+        </p>
+        <button class="bigBtn" id="startBtn">Start Adventure ✨</button>
+      </div>
+    </div>
+
+    <div id="final">
+      <div class="modalCard">
+        <h2>🎂 Happy Birthday, Girrja! 🎂</h2>
+        <p class="msg" id="finalMsg"></p>
+        <button class="bigBtn pink" id="replayBtn">Play Again 🔁</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
