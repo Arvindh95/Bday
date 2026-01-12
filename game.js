@@ -1,5 +1,5 @@
 (() => {
-  const FINAL_MESSAGE = `You found the treasure! 💖
+  const FINAL_MESSAGE = `Actually, you were my treasure! 💖
 
 You deserve all the happiness in this world, chellam. 
 Thank you for being my favorite person in the whole world.
@@ -219,7 +219,7 @@ Happy Birthday, chellam!
       subtitle: "Our first movie together...",
       question: "What was the first movie we watched together?",
       answer: "Thiruchitrambalam",
-      options: ["Thiruchitrambalam", "Vikram", "KGF", "Ponniyin Selvan"],
+      options: ["Vikram", "Thiruchitrambalam", "KGF", "Ponniyin Selvan"],
       onWin: "You kissed me first during the movie! 😝",
     },
     {
@@ -230,7 +230,7 @@ Happy Birthday, chellam!
       subtitle: "A delicious memory...",
       question: "What's our favourite food shop?",
       answer: "Southern Park Chicken Rice",
-      options: ["Southern Park Chicken Rice", "KFC", "McDonald's", "Texas Chicken"],
+      options: ["Southern Park Chicken Rice", "KFC", "Texas Chicken", "McDonald's"],
       onWin: "I know, it surperceeds MCD 🥹",
     },
     {
@@ -241,7 +241,7 @@ Happy Birthday, chellam!
       subtitle: "Only the real Girrja knows...",
       question: "If you were a clone, what phrase would I use to find out? (Only one part of the phrase)",
       answer: "So clever my baby.",
-      options: ["So clever my baby.", "You're so smart!", "That's amazing!", "Good job!"],
+      options: ["So clever my baby", "You're so smart!", "That's amazing!", "Good job!"],
       onWin: "Correct 😌💞 You know what I am gonna show next 😉",
     },
     {
@@ -252,7 +252,7 @@ Happy Birthday, chellam!
       subtitle: "A melody with our inside joke...",
       question: "Which song has our inside joke?",
       answer: "Un Vizhigal",
-      options: ["Un Vizhigal", "Vaa Vaathi", "Katchi Sera", "Arabic Kuthu"],
+      options: ["Vaa Vaathi", "Un Vizhigal", "Katchi Sera", "Arabic Kuthu"],
       onWin: "If you know, you know 😂😂",
     },
     {
@@ -264,7 +264,7 @@ Happy Birthday, chellam!
       question: "What's the best story you have heard?",
       answer: "Cool story",
       options: ["Cool story", "Amazing tale", "Great adventure", "Wonderful journey"],
-      onWin: "Hehe 😄💘 That's the one!",
+      onWin: "Story so cool, that you're married to the storyteller",
     },
   ];
   items.forEach((it) => (it.r = 20));
@@ -287,8 +287,8 @@ Happy Birthday, chellam!
       bounds: { minX: 220, maxX: 400, minY: 320, maxY: 390 },
       name: '🐕 Puppy',
       dialogue: [
-        "Woof! There are 5 hearts hidden in the rooms!",
-        "Find them all to unlock the treasure! 🔐"
+        "Woof! Find colorful keys around the floor!",
+        "Each key opens a matching door! �🚪"
       ]
     },
     {
@@ -304,16 +304,36 @@ Happy Birthday, chellam!
       bounds: { minX: 500, maxX: 630, minY: 320, maxY: 390 },
       name: '🐈 Kitty',
       dialogue: [
-        "Meow~ The hearts glow pink... look carefully!",
-        "Walk right into them to interact! 💗"
+        "Meow~ Collect 5 hearts from the rooms!",
+        "Keys and doors share the same color! 💗"
       ]
     }
   ];
   let currentNpcDialogue = null;
   let npcCooldown = 0;
 
+  // Room Doors - block entry to rooms until unlocked with matching key
+  // Door positions MUST exactly match wall gaps to prevent getting stuck
+  const doors = [
+    { id: 'door1', roomName: 'Room 1', x: 136, y: 200, w: 64, h: 16, keyId: 'key1', unlocked: false, color: '#e57373' },   // Gap: x:136 to x:200 (64px)
+    { id: 'door2', roomName: 'Room 2', x: 430, y: 200, w: 50, h: 16, keyId: 'key2', unlocked: false, color: '#81c784' },   // Gap: x:430 to x:480 (50px)
+    { id: 'door3', roomName: 'Room 3', x: 650, y: 236, w: 16, h: 44, keyId: 'key3', unlocked: false, color: '#64b5f6' },   // Gap: y:236 to y:280 (44px)
+    { id: 'door4', roomName: 'Room 4', x: 86, y: 500, w: 64, h: 16, keyId: 'key4', unlocked: false, color: '#ffb74d' },    // Gap: x:86 to x:150 (64px)
+    { id: 'door5', roomName: 'Room 5', x: 350, y: 500, w: 100, h: 16, keyId: 'key5', unlocked: false, color: '#ba68c8' },  // Gap: x:350 to x:450 (100px)
+  ];
+
+  // Keys - scattered around accessible areas (hallway, between rooms)
+  const keys = [
+    { id: 'key1', x: 250, y: 350, color: '#e57373', collected: false, doorId: 'door1', icon: '🔑' },   // In hallway
+    { id: 'key2', x: 580, y: 250, color: '#81c784', collected: false, doorId: 'door2', icon: '🗝️' },   // Near Room 2 entrance
+    { id: 'key3', x: 820, y: 380, color: '#64b5f6', collected: false, doorId: 'door3', icon: '🔑' },   // Outside Room 3
+    { id: 'key4', x: 250, y: 470, color: '#ffb74d', collected: false, doorId: 'door4', icon: '🗝️' },  // Near Room 4
+    { id: 'key5', x: 550, y: 470, color: '#ba68c8', collected: false, doorId: 'door5', icon: '🔑' },   // Near Room 5
+  ];
+  keys.forEach(k => k.r = 15);
+
   // State
-  let state = { started: false, collected: {}, finished: false };
+  let state = { started: false, collected: {}, finished: false, keysCollected: {}, doorsUnlocked: {} };
   let particles = []; // { x, y, vx, vy, color, life, size }
 
   function spawnConfetti(x, y) {
@@ -341,6 +361,11 @@ Happy Birthday, chellam!
         state.started = !!obj.started;
         state.collected = obj.collected || {};
         state.finished = !!obj.finished;
+        state.keysCollected = obj.keysCollected || {};
+        state.doorsUnlocked = obj.doorsUnlocked || {};
+        // Sync keys and doors arrays with state
+        keys.forEach(k => k.collected = !!state.keysCollected[k.id]);
+        doors.forEach(d => d.unlocked = !!state.doorsUnlocked[d.id]);
       }
     } catch (e) {}
   }
@@ -352,11 +377,15 @@ Happy Birthday, chellam!
   }
 
   function resetAll() {
-    state = { started: false, collected: {}, finished: false };
+    state = { started: false, collected: {}, finished: false, keysCollected: {}, doorsUnlocked: {} };
+    // Reset doors and keys in the arrays as well
+    doors.forEach(d => d.unlocked = false);
+    keys.forEach(k => k.collected = false);
     player.x = 400;
     player.y = 340;
     save();
     updateHeartsUI();
+    updateKeysUI();
     final.style.display = "none";
     splash.style.display = "flex";
   }
@@ -374,6 +403,62 @@ Happy Birthday, chellam!
       d.textContent = "❤";
       heartsEl.appendChild(d);
     }
+  }
+
+  // Keys UI - show collected keys count
+  function updateKeysUI() {
+    const keysCount = Object.keys(state.keysCollected).length;
+    // We could add a visual key counter here if needed
+  }
+
+  // Get nearby key
+  function getNearbyKey() {
+    const px = player.x + player.w / 2,
+      py = player.y + player.h / 2;
+    for (const key of keys) {
+      if (state.keysCollected[key.id]) continue;
+      const d = Math.hypot(px - key.x, py - key.y);
+      if (d < 30) return key;
+    }
+    return null;
+  }
+
+  // Get nearby locked door
+  function getNearbyLockedDoor() {
+    const px = player.x + player.w / 2,
+      py = player.y + player.h / 2;
+    for (const door of doors) {
+      if (state.doorsUnlocked[door.id]) continue;
+      const doorCx = door.x + door.w / 2;
+      const doorCy = door.y + door.h / 2;
+      const d = Math.hypot(px - doorCx, py - doorCy);
+      if (d < 50) return door;
+    }
+    return null;
+  }
+
+  // Collect a key
+  function collectKey(key) {
+    state.keysCollected[key.id] = true;
+    key.collected = true;
+    save();
+    Audio.playCollect();
+    spawnConfetti(key.x, key.y);
+  }
+
+  // Unlock a door
+  function unlockDoor(door) {
+    if (state.keysCollected[door.keyId]) {
+      state.doorsUnlocked[door.id] = true;
+      door.unlocked = true;
+      save();
+      // Play unlock sound
+      Audio.playTone(600, 'sine', 0.2, 0.2);
+      setTimeout(() => Audio.playTone(800, 'sine', 0.3, 0.2), 100);
+      spawnConfetti(door.x + door.w/2, door.y + door.h/2);
+      return true;
+    }
+    return false;
   }
 
   // Input
@@ -430,6 +515,12 @@ Happy Birthday, chellam!
   function getWalls() {
     const all = [...walls];
     if (collectedCount() < gate.need) all.push(gate);
+    // Add locked doors as walls
+    for (const door of doors) {
+      if (!state.doorsUnlocked[door.id]) {
+        all.push(door);
+      }
+    }
     return all;
   }
 
@@ -798,6 +889,66 @@ Happy Birthday, chellam!
       ctx.fillText("💗", it.x, it.y);
     }
 
+    // Draw Keys
+    for (const key of keys) {
+      if (state.keysCollected[key.id]) continue;
+      const pulse = Math.sin(now() / 300 + keys.indexOf(key)) * 0.3 + 0.7;
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(key.x, key.y, 25 + pulse * 6, 0, Math.PI * 2);
+      ctx.fillStyle = `${key.color}33`; // Semi-transparent
+      ctx.fill();
+
+      // Circle
+      ctx.beginPath();
+      ctx.arc(key.x, key.y, key.r, 0, Math.PI * 2);
+      ctx.fillStyle = key.color;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.6)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Key icon
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff";
+      ctx.fillText(key.icon, key.x, key.y);
+    }
+
+    // Draw Room Doors
+    for (const door of doors) {
+      const isUnlocked = state.doorsUnlocked[door.id];
+      const hasKey = state.keysCollected[door.keyId];
+      
+      if (isUnlocked) {
+        // Open door - just a subtle glow
+        ctx.fillStyle = `${door.color}44`;
+        ctx.fillRect(door.x, door.y, door.w, door.h);
+      } else {
+        // Locked door - pulsing
+        const pulse = Math.sin(now() / 350 + doors.indexOf(door)) * 0.2 + 0.8;
+        ctx.fillStyle = door.color;
+        ctx.globalAlpha = pulse;
+        ctx.fillRect(door.x, door.y, door.w, door.h);
+        ctx.globalAlpha = 1.0;
+        
+        // Lock icon or key hint
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 10px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const iconX = door.x + door.w / 2;
+        const iconY = door.y + door.h / 2;
+        if (hasKey) {
+          ctx.fillText("🔓", iconX, iconY); // Show they can unlock
+        } else {
+          ctx.fillText("🔒", iconX, iconY);
+        }
+      }
+    }
+
     // Treasure (if door is open)
     if (got >= gate.need && !state.finished) {
       const pulse = Math.sin(now() / 200) * 0.3 + 0.7;
@@ -1002,6 +1153,28 @@ Happy Birthday, chellam!
         closeNpcDialogue();
       }
 
+      // Check for key collection
+      const nearKey = getNearbyKey();
+      if (nearKey) {
+        const px = player.x + player.w / 2,
+          py = player.y + player.h / 2;
+        if (Math.hypot(px - nearKey.x, py - nearKey.y) < 20) {
+          collectKey(nearKey);
+        }
+      }
+
+      // Check for door unlocking (walk into door with key)
+      const nearDoor = getNearbyLockedDoor();
+      if (nearDoor && state.keysCollected[nearDoor.keyId]) {
+        const px = player.x + player.w / 2,
+          py = player.y + player.h / 2;
+        const doorCx = nearDoor.x + nearDoor.w / 2;
+        const doorCy = nearDoor.y + nearDoor.h / 2;
+        if (Math.hypot(px - doorCx, py - doorCy) < 35) {
+          unlockDoor(nearDoor);
+        }
+      }
+
       // Hint
       const gateNear =
         collectedCount() < gate.need &&
@@ -1010,7 +1183,19 @@ Happy Birthday, chellam!
           player.y + player.h / 2 - (gate.y + gate.h / 2)
         ) < 80;
 
-      if (gateNear) {
+      // Check for nearby key or door for hints
+      if (nearKey) {
+        const door = doors.find(d => d.keyId === nearKey.id);
+        hintBubble.textContent = `🔑 Pick up key for ${door ? door.roomName : 'a room'}!`;
+        hintBubble.style.display = "block";
+      } else if (nearDoor) {
+        if (state.keysCollected[nearDoor.keyId]) {
+          hintBubble.textContent = `🔓 Walk in to unlock ${nearDoor.roomName}!`;
+        } else {
+          hintBubble.textContent = `🔒 Need key to open ${nearDoor.roomName}`;
+        }
+        hintBubble.style.display = "block";
+      } else if (gateNear) {
         hintBubble.textContent = `🔒 Locked! Need ${
           gate.need
         } hearts (you have ${collectedCount()})`;
