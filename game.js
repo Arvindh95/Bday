@@ -23,6 +23,54 @@ Happy Birthday, chellam!
       .trim();
   const rectsOverlap = (a, b) =>
     a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
+
+  // Audio System
+  const Audio = {
+    ctx: null,
+    init: function() {
+      if (!this.ctx) {
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    },
+    playTone: function(freq, type, duration, vol = 0.1) {
+      if (!this.ctx) return;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    },
+    playStep: function() {
+      if (!this.ctx) return;
+      // Random pitch for variety
+      const pitch = 100 + Math.random() * 50;
+      this.playTone(pitch, 'triangle', 0.05, 0.05);
+    },
+    playCollect: function() {
+      if (!this.ctx) return;
+      this.playTone(800, 'sine', 0.1, 0.2);
+      setTimeout(() => this.playTone(1200, 'sine', 0.3, 0.2), 100);
+    },
+    playWin: function() {
+      if (!this.ctx) return;
+      [400, 500, 600, 800, 1000].forEach((f, i) => {
+        setTimeout(() => this.playTone(f, 'sine', 0.4, 0.2), i * 150);
+      });
+    },
+    playClick: function() {
+      if (!this.ctx) return;
+      this.playTone(400, 'sine', 0.1, 0.1);
+    }
+  };
 
   // Canvas
   const canvas = document.getElementById("c");
@@ -117,6 +165,35 @@ Happy Birthday, chellam!
   addWall(600, 400, 80, W);   // Left side of entrance wall
   addWall(730, 400, 154, W);  // Right side of entrance wall (leaving gap from 680 to 730)
 
+  // Decorations
+  const decos = [
+    // Room 1 (Bedroom)
+    { type: 'bed', x: 30, y: 30, w: 60, h: 80, c: '#5d4037' },
+    { type: 'pillow', x: 40, y: 40, w: 40, h: 20, c: '#fff' },
+    { type: 'table', x: 150, y: 50, w: 40, h: 40, c: '#8d6e63' },
+    
+    // Room 2 (Kitchen/Dining)
+    { type: 'table', x: 400, y: 80, w: 100, h: 50, c: '#d7ccc8' },
+    { type: 'chair', x: 410, y: 60, w: 20, h: 20, c: '#5d4037' },
+    { type: 'chair', x: 470, y: 60, w: 20, h: 20, c: '#5d4037' },
+    { type: 'fridge', x: 550, y: 30, w: 40, h: 60, c: '#e0e0e0' },
+
+    // Room 3 (Lab/Study)
+    { type: 'desk', x: 670, y: 50, w: 100, h: 40, c: '#3e2723' },
+    { type: 'bookshelf', x: 840, y: 30, w: 30, h: 100, c: '#5d4037' },
+    
+    // Room 4 (Music Room)
+    { type: 'piano', x: 50, y: 650, w: 60, h: 30, c: '#000' },
+    { type: 'rug', x: 80, y: 600, w: 80, h: 80, c: '#ef535055' },
+
+    // Room 5 (Lounge)
+    { type: 'sofa', x: 340, y: 650, w: 100, h: 40, c: '#5c6bc0' },
+    { type: 'tv', x: 360, y: 520, w: 60, h: 10, c: '#212121' },
+
+    // Treasure Room
+    { type: 'carpet', x: 620, y: 550, w: 240, h: 160, c: '#d81b6033' },
+  ];
+
   // Player
   const player = {
     x: 400,
@@ -197,6 +274,24 @@ Happy Birthday, chellam!
 
   // State
   let state = { started: false, collected: {}, finished: false };
+  let particles = []; // { x, y, vx, vy, color, life, size }
+
+  function spawnConfetti(x, y) {
+    const colors = ['#ff6bb3', '#7cf2ff', '#6cffb8', '#ffd700', '#fff'];
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 200 + 50;
+      particles.push({
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 1.0 + Math.random(),
+        size: Math.random() * 4 + 2
+      });
+    }
+  }
 
   function load() {
     try {
@@ -355,6 +450,7 @@ Happy Birthday, chellam!
           // Select this option
           btn.classList.add("selected");
           selectedAnswer = option;
+          Audio.playClick(); // UI Sound
         });
         mcqOptions.appendChild(btn);
       });
@@ -383,7 +479,9 @@ Happy Birthday, chellam!
       state.collected[currentItem.id] = true;
       save();
       updateHeartsUI();
-      setTimeout(closeOverlay, 1200);
+      Audio.playCollect(); // Sound
+      spawnConfetti(player.x, player.y); // Particles
+      setTimeout(closeOverlay, 1500);
     } else {
       feedback.textContent = "Not quite right, try again! 💭";
       feedback.className = "no";
@@ -400,6 +498,8 @@ Happy Birthday, chellam!
       state.finished = true;
       save();
       final.style.display = "flex";
+      Audio.playWin(); // Sound
+      spawnConfetti(treasure.x, treasure.y);
     }
   }
 
@@ -416,6 +516,10 @@ Happy Birthday, chellam!
       0,
       Math.max(0, world.h - vh)
     );
+    // Smooth camera (Lerp) - if dist is large, snap (teleport), else lerp
+    if (!cam.curX) { cam.curX = cam.x; cam.curY = cam.y; }
+    cam.curX = lerp(cam.curX, cam.x, 0.1);
+    cam.curY = lerp(cam.curY, cam.y, 0.1);
   }
 
   // Draw pixel girl
@@ -498,7 +602,10 @@ Happy Birthday, chellam!
       vh = canvas.clientHeight;
     ctx.clearRect(0, 0, vw, vh);
     ctx.save();
-    ctx.translate(-cam.x, -cam.y);
+    // Use smoothed camera coordinates
+    const cx = cam.curX || cam.x;
+    const cy = cam.curY || cam.y;
+    ctx.translate(-cx, -cy);
 
     // Floor
     ctx.fillStyle = "#1a1e30";
@@ -522,6 +629,12 @@ Happy Birthday, chellam!
     ctx.fillText("Room 4", 110, 560);
     ctx.fillText("Room 5", 400, 560);
     ctx.fillText("🔐 Treasure", 750, 560);
+
+    // Decorations
+    for (const d of decos) {
+      ctx.fillStyle = d.c;
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+    }
 
     // Walls
     ctx.fillStyle = "#3a3f5c";
@@ -594,7 +707,28 @@ Happy Birthday, chellam!
     // Player
     drawPlayer(player.x, player.y);
 
-    ctx.restore();
+    // Particles
+    for (const p of particles) {
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.life; // Fade out
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.globalAlpha = 1.0;
+    }
+
+    // Lighting/Vignette Effect
+    ctx.restore(); // Return to screen space for overlay
+    const lx = player.x + player.w/2 - cx;
+    const ly = player.y + player.h/2 - cy;
+    
+    // Create radial gradient for "lantern" effect
+    const grad = ctx.createRadialGradient(lx, ly, 80, lx, ly, 450);
+    grad.addColorStop(0, "rgba(15, 18, 32, 0)"); // Transparent center
+    grad.addColorStop(1, "rgba(15, 18, 32, 0.85)"); // Dark edges
+    
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, vw, vh);
+
+    // No restart needed since we restored earlier
   }
 
   // Game loop
@@ -629,6 +763,25 @@ Happy Birthday, chellam!
       const my = dy * player.speed * dt;
       if (canMove(player.x + mx, player.y)) player.x += mx;
       if (canMove(player.x, player.y + my)) player.y += my;
+
+      // Footstep sound (simple timer)
+      if (player.walking) {
+        if (!player.stepTimer) player.stepTimer = 0;
+        player.stepTimer -= dt;
+        if (player.stepTimer <= 0) {
+          Audio.playStep();
+          player.stepTimer = 0.35; // Step every 350ms
+        }
+      }
+
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
 
       // Check item
       const near = getNearbyItem();
@@ -681,6 +834,7 @@ Happy Birthday, chellam!
   // Events
   startBtn.addEventListener("click", () => {
     state.started = true;
+    Audio.init(); // Initialize audio context on user gesture
     save();
     splash.style.display = "none";
   });
@@ -689,6 +843,7 @@ Happy Birthday, chellam!
     (e) => {
       e.preventDefault();
       state.started = true;
+      Audio.init(); // Initialize audio context on touch
       save();
       splash.style.display = "none";
     },
