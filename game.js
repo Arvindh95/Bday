@@ -85,6 +85,17 @@ Happy Birthday, chellam!
 
   // UI Elements
   const heartsEl = document.getElementById("hearts");
+
+  // Create keys display element below hearts
+  const keysEl = document.createElement("div");
+  keysEl.id = "keysDisplay";
+  keysEl.style.cssText = "display:flex;gap:4px;margin-top:8px;justify-content:flex-end;";
+  // Wrap hearts and keys in a column container
+  const statsContainer = document.createElement("div");
+  statsContainer.style.cssText = "display:flex;flex-direction:column;align-items:flex-end;";
+  heartsEl.parentNode.insertBefore(statsContainer, heartsEl);
+  statsContainer.appendChild(heartsEl);
+  statsContainer.appendChild(keysEl);
   const hintBubble = document.getElementById("hintBubble");
   const overlay = document.getElementById("overlay");
   const itemTitle = document.getElementById("itemTitle");
@@ -103,8 +114,8 @@ Happy Birthday, chellam!
 
   finalMsg.textContent = FINAL_MESSAGE;
 
-  // ========== MAP DESIGN ==========
-  const world = { w: 900, h: 750 };
+  // ========== MAP DESIGN - EXPANDED MAZE ==========
+  const world = { w: 1350, h: 1100 }; // 50% larger!
   const W = 16; // wall thickness
   const walls = [];
   const addWall = (x, y, w, h) => walls.push({ x, y, w, h });
@@ -115,105 +126,163 @@ Happy Birthday, chellam!
   addWall(0, 0, W, world.h);
   addWall(world.w - W, 0, W, world.h);
 
-  // Central hallway (horizontal, y: 300-400)
-  addWall(W, 300, 150, W);
-  addWall(W, 400, 150, W);
-  addWall(650, 300, 234, W);
-  addWall(650, 400, 234, W);
+  // ===== TOP SECTION (Rooms 1, 2, 3) =====
+  
+  // Room 1 (top-left corner) - Bedroom
+  addWall(W, W, 280, W);           // Top
+  addWall(280, W, W, 200);         // Right wall
+  addWall(W, 200, 200, W);         // Bottom left part (gap x:216 to x:280)
 
-  // Hallway bottom walls connecting to rooms below
-  // Leave gaps for Room 4 entrance (around x: 100-150) and Room 5 entrance (around x: 350-450)
-  addWall(W, 400, 80, W);     // Left side before Room 4 entrance
-  addWall(160, 400, 140, W);  // Wall between Room 4 and Room 5 entrance
-  addWall(450, 400, 150, W);  // Wall between Room 5 entrance and Treasure room
+  // Corridor from Room 1 going right
+  addWall(280, 200, 120, W);       // Top of corridor
+  addWall(280, 280, 200, W);       // Bottom of corridor
+  
+  // Room 2 (top-center) - Kitchen
+  addWall(480, W, 250, W);         // Top
+  addWall(480, W, W, 200);         // Left wall
+  addWall(730, W, W, 280);         // Right wall
+  addWall(480, 200, 100, W);       // Bottom left part (gap x:580 to x:630)
+  addWall(630, 200, 100, W);       // Bottom right part
 
-  // Room 1 (top-left)
-  addWall(W, W, 200, W);
-  addWall(200, W, W, 200);
-  addWall(W, 200, 120, W);
+  // Winding corridor to Room 3
+  addWall(730, 200, 150, W);       // Corridor top
+  addWall(730, 280, 70, W);        // Corridor bottom left
+  addWall(860, 280, W, 100);       // Vertical wall
+  addWall(860, 280, 200, W);       // Continue right
+  
+  // Room 3 (top-right) - Lab
+  addWall(1010, W, 324, W);        // Top
+  addWall(1010, W, W, 280);        // Left wall top (gap y:296 to y:330)
+  addWall(1010, 330, W, 100);      // Left wall bottom
+  addWall(1010, 430, 324, W);      // Bottom
+  
+  // ===== MIDDLE MAZE SECTION =====
+  
+  // Central maze corridors
+  addWall(W, 400, 200, W);         // Left horizontal
+  addWall(W, 500, 280, W);         // Left horizontal 2
+  
+  // Maze pillars and obstacles
+  addWall(350, 350, W, 100);       // Vertical pillar 1
+  addWall(350, 350, 80, W);        // Attached horizontal
+  addWall(500, 400, W, 150);       // Vertical pillar 2
+  addWall(500, 400, 100, W);       // Attached horizontal
+  addWall(650, 320, 80, W);        // Floating wall
+  addWall(650, 420, W, 80);        // Vertical piece
+  
+  // Hidden alcove for key (left side) - gap at top for entry
+  addWall(W, 600, 40, W);         // Shorter top wall (gap from x:56 to x:100)
+  addWall(100, 600, W, 100);
+  addWall(W, 700, 100, W);
+  
+  // More maze walls
+  addWall(200, 550, W, 150);       // Vertical divider
+  addWall(200, 550, 150, W);       // Horizontal piece
+  addWall(400, 550, 200, W);       // Middle section
+  addWall(400, 550, W, 100);       // Vertical
+  
+  // Secret passage (narrow corridor) - open at top for entry
+  addWall(700, 500, W, 200);
+  addWall(780, 500, W, 200);
+  // Top wall removed to allow entry into secret passage
+  
+  // Right side maze
+  addWall(860, 380, W, 220);       // Vertical
+  addWall(860, 600, 200, W);       // Horizontal
+  addWall(1000, 500, W, 100);      // Another vertical
+  addWall(1000, 500, 150, W);      // Horizontal
+  
+  // Hidden corner (top right of maze) - shorter left wall for access from below
+  addWall(1150, 350, W, 80);      // Shorter wall (gap from y:430 to y:500 for entry)
+  addWall(1150, 350, 184, W);
+  
+  // ===== BOTTOM SECTION (Rooms 4, 5, Treasure) =====
+  
+  // Bottom corridor
+  addWall(W, 750, 300, W);
+  addWall(W, 850, 200, W);
+  
+  // Room 4 (bottom-left) - Music Room
+  addWall(W, 900, 200, W);         // Top wall left part (gap x:216 to x:280)
+  addWall(280, 900, 20, W);        // Top wall right part
+  addWall(300, 850, W, 234);       // Right wall
+  addWall(W, 850, W, 234);         // Left wall
+  
+  // Corridor between Rooms 4 and 5
+  addWall(300, 750, 150, W);
+  addWall(500, 750, 100, W);
+  
+  // Room 5 (bottom-center) - Lounge
+  addWall(450, 850, 100, W);       // Top left part (gap x:550 to x:600)
+  addWall(600, 850, 100, W);       // Top right part
+  addWall(450, 850, W, 234);       // Left wall
+  addWall(700, 850, W, 234);       // Right wall
+  
+  // Corridor to Treasure Room - simplified for accessibility
+  addWall(700, 750, 150, W);       // Top corridor wall (shortened)
+  addWall(850, 750, W, 80);        // Partial wall (gap at y:830-900 for entry)
+  
+  // Treasure Room (bottom-right) - Large fancy room with wider entrance
+  addWall(1050, 750, W, 80);       // Left wall top (gap y:830 to y:920)
+  addWall(1050, 920, W, 164);      // Left wall bottom
+  addWall(1050, 750, 284, W);      // Top
 
-  // Room 2 (top-right)
-  addWall(350, W, 200, W); // Top wall
-  addWall(350, W, W, 200); // Left wall
-  addWall(550, W, W, 200); // Right wall
-  addWall(350, 200, 80, W); // Left side of bottom wall (entrance gap)
-  addWall(480, 200, 70, W); // Right side of bottom wall (leaving gap from 430 to 480)
-
-  // Room 3 (right side)
-  addWall(650, W, 234, W);
-  addWall(650, W, W, 220);
-  addWall(650, 280, W, 20);
-
-  // Room 4 (bottom-left)
-  addWall(W, 500, 70, W);     // Top-left part of top wall
-  addWall(150, 500, 50, W);   // Top-right part of top wall (gap from x:86 to x:150)
-  addWall(200, 500, W, 234);  // Right wall
-  addWall(W, 500, W, 234);    // Left wall
-
-  // Room 5 (bottom-center)
-  addWall(300, 500, W, 234);  // Left wall
-  addWall(300, 500, 50, W);   // Top-left part of top wall
-  addWall(500, 500, W, 234);  // Right wall
-  addWall(450, 500, 50, W);   // Top-right part of top wall (gap from x:366 to x:450)
-
-  // Treasure Room (bottom-right)
-  addWall(600, 500, W, 234);  // Left wall
-  addWall(600, 500, 80, W);   // Top-left part of top wall
-  addWall(730, 500, 154, W);  // Top-right part of top wall (gap from x:680 to x:730)
-  addWall(884, 500, W, 234);  // Right wall
-  addWall(600, 734, 284, W);  // Bottom wall
-  addWall(600, 400, 80, W);   // Left side of entrance wall
-  addWall(730, 400, 154, W);  // Right side of entrance wall (leaving gap from 680 to 730)
-
-  // Decorations
+  // Decorations - updated for new map
   const decos = [
     // Room 1 (Bedroom)
-    { type: 'bed', x: 30, y: 30, w: 60, h: 80, c: '#5d4037' },
-    { type: 'pillow', x: 40, y: 40, w: 40, h: 20, c: '#fff' },
-    { type: 'table', x: 150, y: 50, w: 40, h: 40, c: '#8d6e63' },
+    { type: 'bed', x: 40, y: 40, w: 80, h: 100, c: '#5d4037' },
+    { type: 'pillow', x: 50, y: 50, w: 60, h: 30, c: '#fff' },
+    { type: 'table', x: 200, y: 60, w: 50, h: 50, c: '#8d6e63' },
     
-    // Room 2 (Kitchen/Dining)
-    { type: 'table', x: 400, y: 80, w: 100, h: 50, c: '#d7ccc8' },
-    { type: 'chair', x: 410, y: 60, w: 20, h: 20, c: '#5d4037' },
-    { type: 'chair', x: 470, y: 60, w: 20, h: 20, c: '#5d4037' },
-    { type: 'fridge', x: 550, y: 30, w: 40, h: 60, c: '#e0e0e0' },
+    // Room 2 (Kitchen)
+    { type: 'table', x: 550, y: 80, w: 120, h: 60, c: '#d7ccc8' },
+    { type: 'chair', x: 560, y: 50, w: 25, h: 25, c: '#5d4037' },
+    { type: 'chair', x: 640, y: 50, w: 25, h: 25, c: '#5d4037' },
+    { type: 'fridge', x: 500, y: 40, w: 40, h: 70, c: '#e0e0e0' },
 
-    // Room 3 (Lab/Study)
-    { type: 'desk', x: 670, y: 50, w: 100, h: 40, c: '#3e2723' },
-    { type: 'bookshelf', x: 840, y: 30, w: 30, h: 100, c: '#5d4037' },
+    // Room 3 (Lab)
+    { type: 'desk', x: 1050, y: 60, w: 150, h: 50, c: '#3e2723' },
+    { type: 'bookshelf', x: 1280, y: 40, w: 40, h: 150, c: '#5d4037' },
+    { type: 'computer', x: 1100, y: 80, w: 40, h: 30, c: '#424242' },
+    
+    // Maze decorations
+    { type: 'plant', x: 380, y: 380, w: 30, h: 30, c: '#4caf50' },
+    { type: 'barrel', x: 520, y: 450, w: 35, h: 35, c: '#795548' },
+    { type: 'crate', x: 680, y: 360, w: 40, h: 40, c: '#8d6e63' },
+    { type: 'plant', x: 920, y: 450, w: 30, h: 30, c: '#66bb6a' },
     
     // Room 4 (Music Room)
-    { type: 'piano', x: 50, y: 650, w: 60, h: 30, c: '#000' },
-    { type: 'rug', x: 80, y: 600, w: 80, h: 80, c: '#ef535055' },
+    { type: 'piano', x: 60, y: 950, w: 100, h: 50, c: '#000' },
+    { type: 'rug', x: 100, y: 930, w: 120, h: 100, c: '#ef535055' },
 
     // Room 5 (Lounge)
-    { type: 'sofa', x: 340, y: 650, w: 100, h: 40, c: '#5c6bc0' },
-    { type: 'tv', x: 360, y: 520, w: 60, h: 10, c: '#212121' },
+    { type: 'sofa', x: 520, y: 950, w: 120, h: 50, c: '#5c6bc0' },
+    { type: 'tv', x: 540, y: 880, w: 80, h: 15, c: '#212121' },
 
     // Treasure Room
-    { type: 'carpet', x: 620, y: 550, w: 240, h: 160, c: '#d81b6033' },
+    { type: 'carpet', x: 1080, y: 800, w: 220, h: 250, c: '#d81b6033' },
   ];
 
-  // Player
+  // Player starts in center of maze
   const player = {
-    x: 400,
-    y: 340,
+    x: 600,
+    y: 450,
     w: 24,
     h: 32,
-    speed: 150,
+    speed: 170, // Faster for bigger map
     dir: 1,
     walking: false,
   };
   const cam = { x: 0, y: 0 };
 
-  // The locked door (gate)
-  const gate = { x: 600, y: 400, w: W, h: 100, need: 5 };
+  // The locked gate to Treasure Room (wider entrance: y:830 to y:920)
+  const gate = { x: 1050, y: 830, w: W, h: 90, need: 5 };
 
-  // Items (5 hearts in 5 rooms)
+  // Items (5 hearts in 5 rooms) - positioned in the rooms
   const items = [
     {
       id: "movie",
-      x: 110,
+      x: 140,
       y: 110,
       name: "Movie Ticket 🎟️",
       subtitle: "Our first movie together...",
@@ -224,7 +293,7 @@ Happy Birthday, chellam!
     },
     {
       id: "food",
-      x: 450,
+      x: 600,
       y: 110,
       name: "Food Receipt 🍗",
       subtitle: "A delicious memory...",
@@ -235,30 +304,30 @@ Happy Birthday, chellam!
     },
     {
       id: "clone",
-      x: 780,
-      y: 150,
+      x: 1180,
+      y: 250,
       name: "Clone Detector 🧪",
       subtitle: "Only the real Girrja knows...",
       question: "If you were a clone, what phrase would I use to find out? (Only one part of the phrase)",
       answer: "So clever my baby.",
-      options: ["So clever my baby", "You're so smart!", "That's amazing!", "Good job!"],
+      options: ["You're so smart!", "That's amazing!", "So clever my baby", "Good job!"],
       onWin: "Correct 😌💞 You know what I am gonna show next 😉",
     },
     {
       id: "song",
-      x: 110,
-      y: 620,
+      x: 150,
+      y: 980,
       name: "Secret Song 🎶",
       subtitle: "A melody with our inside joke...",
       question: "Which song has our inside joke?",
       answer: "Un Vizhigal",
-      options: ["Vaa Vaathi", "Un Vizhigal", "Katchi Sera", "Arabic Kuthu"],
+      options: ["Vaa Vaathi", "Katchi Sera", "Arabic Kuthu", "Un Vizhigal"],
       onWin: "If you know, you know 😂😂",
     },
     {
       id: "story",
-      x: 400,
-      y: 620,
+      x: 580,
+      y: 980,
       name: "Storybook 📖",
       subtitle: "A story that makes us smile...",
       question: "What's the best story you have heard?",
@@ -270,65 +339,64 @@ Happy Birthday, chellam!
   items.forEach((it) => (it.r = 20));
 
   // Treasure position (in locked room)
-  const treasure = { x: 750, y: 620 };
+  const treasure = { x: 1200, y: 950 };
 
-  // NPCs (pets/friends that give hints)
+  // NPCs (pets that give hints) - in maze area
   const npcs = [
     {
       id: 'dog',
-      x: 300,
-      y: 350,
+      x: 450,
+      y: 450,
       w: 20,
       h: 16,
-      speed: 30,
+      speed: 35,
       vx: 0,
       vy: 0,
       moveTimer: 0,
-      bounds: { minX: 220, maxX: 400, minY: 320, maxY: 390 },
+      bounds: { minX: 350, maxX: 650, minY: 400, maxY: 540 },
       name: '🐕 Puppy',
       dialogue: [
-        "Woof! Find colorful keys around the floor!",
-        "Each key opens a matching door! �🚪"
+        "Woof! This maze is tricky!",
+        "Keys are hidden in secret spots! �"
       ]
     },
     {
       id: 'cat',
-      x: 550,
-      y: 350,
+      x: 800,
+      y: 550,
       w: 18,
       h: 14,
-      speed: 25,
+      speed: 30,
       vx: 0,
       vy: 0,
       moveTimer: 0,
-      bounds: { minX: 500, maxX: 630, minY: 320, maxY: 390 },
+      bounds: { minX: 720, maxX: 850, minY: 520, maxY: 680 },
       name: '🐈 Kitty',
       dialogue: [
-        "Meow~ Collect 5 hearts from the rooms!",
-        "Keys and doors share the same color! 💗"
+        "Meow~ Explore every corner!",
+        "Matching colors = matching doors! 💗"
       ]
     }
   ];
   let currentNpcDialogue = null;
   let npcCooldown = 0;
 
-  // Room Doors - block entry to rooms until unlocked with matching key
-  // Door positions MUST exactly match wall gaps to prevent getting stuck
+  // Room Doors - block entry to rooms until unlocked
   const doors = [
-    { id: 'door1', roomName: 'Room 1', x: 136, y: 200, w: 64, h: 16, keyId: 'key1', unlocked: false, color: '#e57373' },   // Gap: x:136 to x:200 (64px)
-    { id: 'door2', roomName: 'Room 2', x: 430, y: 200, w: 50, h: 16, keyId: 'key2', unlocked: false, color: '#81c784' },   // Gap: x:430 to x:480 (50px)
-    { id: 'door3', roomName: 'Room 3', x: 650, y: 236, w: 16, h: 44, keyId: 'key3', unlocked: false, color: '#64b5f6' },   // Gap: y:236 to y:280 (44px)
-    { id: 'door4', roomName: 'Room 4', x: 86, y: 500, w: 64, h: 16, keyId: 'key4', unlocked: false, color: '#ffb74d' },    // Gap: x:86 to x:150 (64px)
-    { id: 'door5', roomName: 'Room 5', x: 350, y: 500, w: 100, h: 16, keyId: 'key5', unlocked: false, color: '#ba68c8' },  // Gap: x:350 to x:450 (100px)
+    { id: 'door1', roomName: 'Room 1', x: 216, y: 200, w: 64, h: 16, keyId: 'key1', unlocked: false, color: '#e57373' },   // Gap x:216 to x:280
+    { id: 'door2', roomName: 'Room 2', x: 580, y: 200, w: 50, h: 16, keyId: 'key2', unlocked: false, color: '#81c784' },   // Gap x:580 to x:630
+    { id: 'door3', roomName: 'Room 3', x: 1010, y: 296, w: 16, h: 34, keyId: 'key3', unlocked: false, color: '#64b5f6' },  // Gap y:296 to y:330
+    { id: 'door4', roomName: 'Room 4', x: 216, y: 900, w: 64, h: 16, keyId: 'key4', unlocked: false, color: '#ffb74d' },   // Gap x:216 to x:280
+    { id: 'door5', roomName: 'Room 5', x: 550, y: 850, w: 50, h: 16, keyId: 'key5', unlocked: false, color: '#ba68c8' },   // Gap x:550 to x:600
   ];
 
-  // Keys - scattered around accessible areas (hallway, between rooms)
+  // Keys - HIDDEN in tricky spots!
   const keys = [
-    { id: 'key1', x: 250, y: 350, color: '#e57373', collected: false, doorId: 'door1', icon: '🔑' },   // In hallway
-    { id: 'key2', x: 580, y: 250, color: '#81c784', collected: false, doorId: 'door2', icon: '🗝️' },   // Near Room 2 entrance
-    { id: 'key3', x: 820, y: 380, color: '#64b5f6', collected: false, doorId: 'door3', icon: '🔑' },   // Outside Room 3
-    { id: 'key4', x: 250, y: 470, color: '#ffb74d', collected: false, doorId: 'door4', icon: '🗝️' },  // Near Room 4
-    { id: 'key5', x: 550, y: 470, color: '#ba68c8', collected: false, doorId: 'door5', icon: '🔑' },   // Near Room 5
+    { id: 'key1', x: 50, y: 650, color: '#e57373', collected: false, doorId: 'door1', icon: '🔑' },      // Hidden alcove left
+    { id: 'key2', x: 1280, y: 480, color: '#81c784', collected: false, doorId: 'door2', icon: '🗝️' },    // Hidden corner top-right (below Room 3)
+    { id: 'key3', x: 740, y: 650, color: '#64b5f6', collected: false, doorId: 'door3', icon: '🔑' },     // Secret passage
+    { id: 'key4', x: 950, y: 560, color: '#ffb74d', collected: false, doorId: 'door4', icon: '🗝️' },    // Right maze area
+    { id: 'key5', x: 380, y: 480, color: '#ba68c8', collected: false, doorId: 'door5', icon: '🔑' },     // Near maze pillar
   ];
   keys.forEach(k => k.r = 15);
 
@@ -405,10 +473,26 @@ Happy Birthday, chellam!
     }
   }
 
-  // Keys UI - show collected keys count
+  // Keys UI - show collected keys as colored icons
   function updateKeysUI() {
-    const keysCount = Object.keys(state.keysCollected).length;
-    // We could add a visual key counter here if needed
+    keysEl.innerHTML = "";
+    for (const key of keys) {
+      const d = document.createElement("div");
+      d.style.cssText = `
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        background: ${state.keysCollected[key.id] ? key.color : '#333'};
+        opacity: ${state.keysCollected[key.id] ? '1' : '0.4'};
+        border: 2px solid ${key.color};
+      `;
+      d.textContent = state.keysCollected[key.id] ? "🔑" : "";
+      keysEl.appendChild(d);
+    }
   }
 
   // Get nearby key
@@ -442,6 +526,7 @@ Happy Birthday, chellam!
     state.keysCollected[key.id] = true;
     key.collected = true;
     save();
+    updateKeysUI();
     Audio.playCollect();
     spawnConfetti(key.x, key.y);
   }
@@ -822,12 +907,12 @@ Happy Birthday, chellam!
     ctx.fillStyle = "rgba(255,255,255,0.1)";
     ctx.font = "bold 14px system-ui";
     ctx.textAlign = "center";
-    ctx.fillText("Room 1", 110, 60);
-    ctx.fillText("Room 2", 450, 60);
-    ctx.fillText("Room 3", 780, 60);
-    ctx.fillText("Room 4", 110, 560);
-    ctx.fillText("Room 5", 400, 560);
-    ctx.fillText("🔐 Treasure", 750, 560);
+    ctx.fillText("Room 1", 150, 60);
+    ctx.fillText("Room 2", 600, 60);
+    ctx.fillText("Room 3", 1180, 200);
+    ctx.fillText("Room 4", 150, 970);
+    ctx.fillText("Room 5", 580, 950);
+    ctx.fillText("🔐 Treasure", 1180, 830);
 
     // Decorations
     for (const d of decos) {
@@ -1247,6 +1332,7 @@ Happy Birthday, chellam!
   // Init
   load();
   updateHeartsUI();
+  updateKeysUI();
   if (state.finished) {
     splash.style.display = "none";
     final.style.display = "flex";
