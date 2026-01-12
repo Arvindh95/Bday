@@ -403,6 +403,9 @@ Happy Birthday, chellam!
   // State
   let state = { started: false, collected: {}, finished: false, keysCollected: {}, doorsUnlocked: {} };
   let particles = []; // { x, y, vx, vy, color, life, size }
+  let footsteps = []; // { x, y, life, size } - fading footprints
+  let sparkles = [];  // { x, y, vx, vy, color, life, size } - floating sparkles around items
+  let screenShake = { x: 0, y: 0, intensity: 0, duration: 0 }; // Screen shake effect
 
   function spawnConfetti(x, y) {
     const colors = ['#ff6bb3', '#7cf2ff', '#6cffb8', '#ffd700', '#fff'];
@@ -419,6 +422,39 @@ Happy Birthday, chellam!
         size: Math.random() * 4 + 2
       });
     }
+  }
+
+  // Spawn footstep at player position
+  function spawnFootstep(x, y) {
+    footsteps.push({
+      x: x,
+      y: y,
+      life: 1.0, // Fades over 1 second
+      size: 6
+    });
+    // Limit footsteps to prevent memory issues
+    if (footsteps.length > 100) footsteps.shift();
+  }
+
+  // Spawn sparkles around an item
+  function spawnSparkle(x, y, color) {
+    const angle = Math.random() * Math.PI * 2;
+    const dist = Math.random() * 20 + 10;
+    sparkles.push({
+      x: x + Math.cos(angle) * dist,
+      y: y + Math.sin(angle) * dist,
+      vx: (Math.random() - 0.5) * 20,
+      vy: -Math.random() * 30 - 10, // Float upward
+      color: color,
+      life: 0.8 + Math.random() * 0.5,
+      size: Math.random() * 3 + 1
+    });
+  }
+
+  // Trigger screen shake
+  function triggerScreenShake(intensity, duration) {
+    screenShake.intensity = intensity;
+    screenShake.duration = duration;
   }
 
   function load() {
@@ -529,6 +565,7 @@ Happy Birthday, chellam!
     updateKeysUI();
     Audio.playCollect();
     spawnConfetti(key.x, key.y);
+    triggerScreenShake(4, 0.15); // Small shake on key collect
   }
 
   // Unlock a door
@@ -541,6 +578,7 @@ Happy Birthday, chellam!
       Audio.playTone(600, 'sine', 0.2, 0.2);
       setTimeout(() => Audio.playTone(800, 'sine', 0.3, 0.2), 100);
       spawnConfetti(door.x + door.w/2, door.y + door.h/2);
+      triggerScreenShake(8, 0.3); // Screen shake on unlock!
       return true;
     }
     return false;
@@ -697,6 +735,7 @@ Happy Birthday, chellam!
       updateHeartsUI();
       Audio.playCollect(); // Sound
       spawnConfetti(player.x, player.y); // Particles
+      triggerScreenShake(5, 0.2); // Small screen shake on heart collect
       // Modal stays open until user clicks close button
     } else {
       feedback.textContent = "Not quite right, try again! 💭";
@@ -886,9 +925,9 @@ Happy Birthday, chellam!
       vh = canvas.clientHeight;
     ctx.clearRect(0, 0, vw, vh);
     ctx.save();
-    // Use smoothed camera coordinates
-    const cx = cam.curX || cam.x;
-    const cy = cam.curY || cam.y;
+    // Use smoothed camera coordinates + screen shake
+    const cx = (cam.curX || cam.x) + screenShake.x;
+    const cy = (cam.curY || cam.y) + screenShake.y;
     ctx.translate(-cx, -cy);
 
     // Floor
@@ -903,6 +942,14 @@ Happy Birthday, chellam!
       }
     }
 
+    // Draw footstep trails
+    for (const f of footsteps) {
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.size * f.life, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(180, 180, 200, ${f.life * 0.3})`;
+      ctx.fill();
+    }
+
     // Room labels
     ctx.fillStyle = "rgba(255,255,255,0.1)";
     ctx.font = "bold 14px system-ui";
@@ -914,10 +961,53 @@ Happy Birthday, chellam!
     ctx.fillText("Room 5", 580, 950);
     ctx.fillText("🔐 Treasure", 1180, 830);
 
-    // Decorations
+    // Decorations (with animations!)
     for (const d of decos) {
-      ctx.fillStyle = d.c;
-      ctx.fillRect(d.x, d.y, d.w, d.h);
+      ctx.save();
+      const t = now() / 1000;
+      
+      // Animate plants (sway)
+      if (d.type === 'plant') {
+        const sway = Math.sin(t * 2 + d.x) * 3;
+        ctx.translate(d.x + d.w/2, d.y + d.h);
+        ctx.rotate(sway * Math.PI / 180);
+        ctx.fillStyle = d.c;
+        ctx.fillRect(-d.w/2, -d.h, d.w, d.h);
+      }
+      // Animate rugs (subtle pulse)
+      else if (d.type === 'rug' || d.type === 'carpet') {
+        const pulse = 1 + Math.sin(t * 1.5) * 0.02;
+        ctx.translate(d.x + d.w/2, d.y + d.h/2);
+        ctx.scale(pulse, pulse);
+        ctx.fillStyle = d.c;
+        ctx.fillRect(-d.w/2, -d.h/2, d.w, d.h);
+      }
+      // Animate piano (keys shimmer)
+      else if (d.type === 'piano') {
+        ctx.fillStyle = d.c;
+        ctx.fillRect(d.x, d.y, d.w, d.h);
+        // White keys shimmer
+        const shimmer = Math.sin(t * 3) * 0.1 + 0.9;
+        ctx.fillStyle = `rgba(255, 255, 255, ${shimmer * 0.3})`;
+        for (let i = 0; i < 6; i++) {
+          ctx.fillRect(d.x + 5 + i * 15, d.y + 5, 12, d.h - 15);
+        }
+      }
+      // TV flicker
+      else if (d.type === 'tv') {
+        ctx.fillStyle = d.c;
+        ctx.fillRect(d.x, d.y, d.w, d.h);
+        // Screen glow
+        const flicker = Math.random() * 0.2 + 0.3;
+        ctx.fillStyle = `rgba(100, 180, 255, ${flicker})`;
+        ctx.fillRect(d.x + 2, d.y + 2, d.w - 4, d.h - 4);
+      }
+      // Default static decoration
+      else {
+        ctx.fillStyle = d.c;
+        ctx.fillRect(d.x, d.y, d.w, d.h);
+      }
+      ctx.restore();
     }
 
     // Walls
@@ -1056,11 +1146,27 @@ Happy Birthday, chellam!
     // Player
     drawPlayer(player.x, player.y);
 
-    // Particles
+    // Particles (confetti)
     for (const p of particles) {
       ctx.fillStyle = p.color;
       ctx.globalAlpha = p.life; // Fade out
       ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.globalAlpha = 1.0;
+    }
+
+    // Sparkles (floating around items)
+    for (const s of sparkles) {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = s.life;
+      ctx.fill();
+      // Add a little glow
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * 2, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = s.life * 0.3;
+      ctx.fill();
       ctx.globalAlpha = 1.0;
     }
 
@@ -1158,17 +1264,60 @@ Happy Birthday, chellam!
         player.stepTimer -= dt;
         if (player.stepTimer <= 0) {
           Audio.playStep();
-          player.stepTimer = 0.35; // Step every 350ms
+          // Spawn footstep trail
+          spawnFootstep(player.x + player.w/2, player.y + player.h);
+          player.stepTimer = 0.25; // Footstep every 250ms
         }
       }
 
-      // Update particles
+      // Update particles (confetti)
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.life -= dt;
         if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // Update footsteps (fade out)
+      for (let i = footsteps.length - 1; i >= 0; i--) {
+        footsteps[i].life -= dt * 0.5; // Fade slower
+        if (footsteps[i].life <= 0) footsteps.splice(i, 1);
+      }
+
+      // Update sparkles
+      for (let i = sparkles.length - 1; i >= 0; i--) {
+        const s = sparkles[i];
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        s.life -= dt;
+        if (s.life <= 0) sparkles.splice(i, 1);
+      }
+
+      // Spawn sparkles around uncollected keys and hearts
+      if (Math.random() < 0.1) { // 10% chance per frame
+        // Sparkle around a random key
+        const uncollectedKeys = keys.filter(k => !state.keysCollected[k.id]);
+        if (uncollectedKeys.length > 0) {
+          const key = uncollectedKeys[Math.floor(Math.random() * uncollectedKeys.length)];
+          spawnSparkle(key.x, key.y, key.color);
+        }
+        // Sparkle around a random heart
+        const uncollectedItems = items.filter(it => !state.collected[it.id]);
+        if (uncollectedItems.length > 0) {
+          const item = uncollectedItems[Math.floor(Math.random() * uncollectedItems.length)];
+          spawnSparkle(item.x, item.y, '#ff6bb3');
+        }
+      }
+
+      // Update screen shake
+      if (screenShake.duration > 0) {
+        screenShake.duration -= dt;
+        screenShake.x = (Math.random() - 0.5) * screenShake.intensity * 2;
+        screenShake.y = (Math.random() - 0.5) * screenShake.intensity * 2;
+      } else {
+        screenShake.x = 0;
+        screenShake.y = 0;
       }
 
       // Update NPC movement
